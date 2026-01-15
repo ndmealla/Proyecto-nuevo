@@ -28,3 +28,8 @@ export interface OfficeLocation {
 }
 
 export type ViewType = 'scanner' | 'dashboard' | 'history' | 'settings';
+
+export interface AppConfig {
+  companyName: string;
+  logoUrl: string;
+}
