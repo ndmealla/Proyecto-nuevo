@@ -12,6 +12,14 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2913/2913444.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // Parche para que funcione sin Node.js
+      window.process = {
+        env: {
+          API_KEY: '' // La clave se inyecta automáticamente en el entorno de ejecución
+        }
+      };
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { 
@@ -47,17 +55,14 @@
     <div id="root"></div>
     
     <script>
-      // Registro de Service Worker para habilitar PWA
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker registrado correctamente'))
-            .catch(err => console.error('Error al registrar SW:', err));
+            .then(reg => console.log('SW listo'))
+            .catch(err => console.error('Error SW:', err));
         });
       }
     </script>
-
-    <!-- Carga del módulo principal -->
     <script type="module" src="index.tsx"></script>
 </body>
 </html>
