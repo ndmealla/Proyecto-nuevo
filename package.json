@@ -1,5 +1,5 @@
 {
-  "name": "checkin-pro---control-de-asistencia-qr",
+  "name": "checkin-pro",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,8 +13,8 @@
     "react-dom": "^19.2.3",
     "@google/genai": "^1.36.0",
     "lucide-react": "^0.562.0",
-    "recharts": "^3.6.0",
-    "html5-qrcode": "^2.3.8"
+    "html5-qrcode": "^2.3.8",
+    "recharts": "^3.6.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

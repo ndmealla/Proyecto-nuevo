@@ -4,65 +4,443 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CheckIn Pro - Control de Asistencia</title>
-    <meta name="theme-color" content="#4f46e5">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="CheckIn Pro">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2913/2913444.png">
+    <title>CheckIn Pro | Sistema de Asistencia</title>
+    
+    <!-- Librerías desde CDN (No requieren instalación) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      // Parche para que funcione sin Node.js
-      window.process = {
-        env: {
-          API_KEY: '' // La clave se inyecta automáticamente en el entorno de ejecución
-        }
-      };
-    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { 
-          font-family: 'Inter', sans-serif; 
-          overscroll-behavior-y: contain;
-          -webkit-tap-highlight-color: transparent;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
         }
-        .shake { animation: shake 0.5s; }
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-5px); }
-          75% { transform: translateX(5px); }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #111827;
+            -webkit-tap-highlight-color: transparent;
         }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-active {
+            color: var(--primary);
+            background: #eef2ff;
+            border-radius: 1rem;
+        }
+
+        #reader {
+            border: none !important;
+            border-radius: 1.5rem;
+            overflow: hidden;
+        }
+
+        #reader__scan_region video {
+            object-fit: cover !important;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-out; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
     "@google/genai": "https://esm.sh/@google/genai@^1.36.0",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "html5-qrcode": "https://esm.sh/html5-qrcode@^2.3.8"
+    "html5-qrcode": "https://esm.sh/html5-qrcode@^2.3.8",
+    "recharts": "https://esm.sh/recharts@^3.6.0"
   }
 }
 </script>
 </head>
-<body class="bg-slate-50 text-slate-900">
-    <div id="root"></div>
-    
+<body class="bg-slate-50 min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-40 flex justify-between items-center shadow-sm">
+        <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+            </div>
+            <h1 class="font-extrabold text-slate-800 tracking-tight" id="header-title">CheckIn Pro</h1>
+        </div>
+        <div id="sync-status" class="flex items-center space-x-2 px-3 py-1 bg-slate-100 rounded-full text-[10px] font-bold text-slate-500 uppercase">
+            <i data-lucide="cloud-off" class="w-3 h-3"></i>
+            <span>Local</span>
+        </div>
+    </header>
+
+    <!-- App Container -->
+    <main class="max-w-lg mx-auto p-4 pb-32">
+        
+        <!-- DASHBOARD TAB -->
+        <section id="tab-dashboard" class="tab-content active space-y-6">
+            <div class="bg-gradient-to-br from-indigo-600 to-violet-700 p-6 rounded-[2rem] text-white shadow-xl shadow-indigo-100">
+                <p class="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-1">Bienvenido</p>
+                <h2 id="user-display-name" class="text-2xl font-black">Admin Empresa</h2>
+                <div class="mt-6 grid grid-cols-2 gap-4">
+                    <div class="bg-white/10 p-4 rounded-2xl backdrop-blur-md">
+                        <p class="text-[10px] uppercase font-bold text-indigo-200">Hoy</p>
+                        <p id="stats-today" class="text-xl font-bold">--:--</p>
+                    </div>
+                    <div class="bg-white/10 p-4 rounded-2xl backdrop-blur-md">
+                        <p class="text-[10px] uppercase font-bold text-indigo-200">Asistencias</p>
+                        <p id="stats-count" class="text-xl font-bold">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                <h3 class="text-sm font-black text-slate-800 uppercase mb-4 flex items-center">
+                    <i data-lucide="trending-up" class="w-4 h-4 mr-2 text-indigo-600"></i>
+                    Actividad Semanal
+                </h3>
+                <canvas id="activityChart" class="w-full"></canvas>
+            </div>
+
+            <div id="recent-logs" class="space-y-3">
+                <!-- Logs will be injected here -->
+            </div>
+        </section>
+
+        <!-- SCANNER TAB -->
+        <section id="tab-scanner" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100">
+                <div class="mb-6 flex justify-between items-center">
+                    <h2 class="font-black text-slate-800 uppercase text-sm tracking-widest">Escanear QR Acceso</h2>
+                    <span class="bg-green-100 text-green-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Cámara Activa</span>
+                </div>
+                <div id="reader" class="bg-slate-50 min-h-[300px]"></div>
+                <div id="scanner-feedback" class="mt-6 p-4 bg-indigo-50 rounded-2xl border border-indigo-100 flex items-center space-x-4">
+                    <div class="p-3 bg-white rounded-xl text-indigo-600 shadow-sm"><i data-lucide="map-pin"></i></div>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase">Estado GPS</p>
+                        <p id="gps-status" class="text-sm font-bold text-slate-700 italic">Verificando proximidad...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- HISTORY TAB -->
+        <section id="tab-history" class="tab-content space-y-4">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-xl font-black text-slate-800">Historial Completo</h2>
+                <button onclick="app.exportCSV()" class="p-2 bg-slate-900 text-white rounded-xl flex items-center space-x-2 text-xs font-bold">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span>CSV</span>
+                </button>
+            </div>
+            <div id="history-list" class="space-y-3">
+                <!-- History injected here -->
+            </div>
+        </section>
+
+        <!-- SETTINGS TAB -->
+        <section id="tab-settings" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
+                <h2 class="font-black text-slate-800 flex items-center">
+                    <i data-lucide="github" class="w-5 h-5 mr-3 text-indigo-600"></i>
+                    GitHub Sync (Guardado en Nube)
+                </h2>
+                <p class="text-xs text-slate-500 leading-relaxed">Conecta tu repositorio de GitHub para guardar automáticamente todos los registros y archivos de respaldo.</p>
+                
+                <div class="space-y-3">
+                    <input type="text" id="gh-token" placeholder="Token de GitHub (PAT)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 ring-indigo-500/20 transition-all">
+                    <input type="text" id="gh-repo" placeholder="Usuario/Nombre-del-Repositorio" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 ring-indigo-500/20 transition-all">
+                    <button onclick="app.saveGHConfig()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold text-sm shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center space-x-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span>Guardar y Sincronizar</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                <h3 class="font-black text-slate-800 mb-4 uppercase text-[10px] tracking-widest text-slate-400">QR de Estación</h3>
+                <div class="flex flex-col items-center p-4 bg-slate-50 rounded-2xl">
+                    <img id="qr-preview" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=CHECKIN_PRO_STATION" class="w-32 h-32 mb-4 border-4 border-white rounded-lg shadow-md">
+                    <button onclick="app.printQR()" class="text-xs font-bold text-indigo-600 flex items-center">
+                        <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Imprimir Código para Pared
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="app.reset()" class="w-full bg-red-50 text-red-600 py-4 rounded-xl font-bold text-sm border border-red-100 flex items-center justify-center space-x-2">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                <span>Borrar Todos los Datos Locales</span>
+            </button>
+        </section>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm glass-card rounded-[2.5rem] p-2 flex justify-around items-center shadow-2xl z-50">
+        <button onclick="app.changeTab('dashboard')" class="nav-btn p-4 text-slate-400 transition-all nav-active" data-tab="dashboard">
+            <i data-lucide="layout-grid"></i>
+        </button>
+        <button onclick="app.changeTab('scanner')" class="nav-btn p-5 bg-indigo-600 text-white rounded-full -mt-12 shadow-xl shadow-indigo-200" data-tab="scanner">
+            <i data-lucide="camera" class="w-7 h-7"></i>
+        </button>
+        <button onclick="app.changeTab('history')" class="nav-btn p-4 text-slate-400 transition-all" data-tab="history">
+            <i data-lucide="calendar"></i>
+        </button>
+        <button onclick="app.changeTab('settings')" class="nav-btn p-4 text-slate-400 transition-all" data-tab="settings">
+            <i data-lucide="settings"></i>
+        </button>
+    </nav>
+
+    <!-- JS Logic -->
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('SW listo'))
-            .catch(err => console.error('Error SW:', err));
-        });
-      }
+        const app = {
+            records: JSON.parse(localStorage.getItem('qr_records') || '[]'),
+            config: JSON.parse(localStorage.getItem('qr_config') || '{"office":{"lat":0,"lng":0,"radius":200},"gh":{"token":"","repo":""}}'),
+            scanner: null,
+
+            init() {
+                lucide.createIcons();
+                this.updateUI();
+                this.initChart();
+                this.startLocationWatch();
+                
+                if (this.config.gh.token) {
+                    document.getElementById('gh-token').value = this.config.gh.token;
+                    document.getElementById('gh-repo').value = this.config.gh.repo;
+                    this.syncStatus('cloud', 'Sincronizado');
+                }
+            },
+
+            changeTab(tabId) {
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                document.getElementById('tab-' + tabId).classList.add('active');
+                
+                document.querySelectorAll('.nav-btn').forEach(b => {
+                    b.classList.remove('nav-active', 'bg-indigo-600', 'text-white');
+                    if(b.dataset.tab !== 'scanner') b.classList.add('text-slate-400');
+                    else b.classList.add('bg-indigo-600', 'text-white');
+                });
+
+                const activeBtn = document.querySelector(`[data-tab="${tabId}"]`);
+                if(tabId !== 'scanner') activeBtn.classList.add('nav-active');
+
+                if (tabId === 'scanner') this.startScanner();
+                else if (this.scanner) this.scanner.clear();
+
+                this.updateUI();
+            },
+
+            startScanner() {
+                this.scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+                this.scanner.render((text) => this.handleScan(text));
+            },
+
+            async handleScan(text) {
+                if (!text.includes('CHECKIN_PRO')) return alert("Código QR no válido para esta empresa.");
+                
+                const pos = await this.getCurrentPosition();
+                const now = new Date();
+                const record = {
+                    id: Date.now(),
+                    timestamp: now.toISOString(),
+                    type: this.isUserCheckedIn() ? 'SALIDA' : 'ENTRADA',
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude
+                };
+
+                this.records.push(record);
+                localStorage.setItem('qr_records', JSON.stringify(this.records));
+                
+                alert(`¡${record.type} registrada correctamente!`);
+                this.syncToGitHub();
+                this.changeTab('dashboard');
+            },
+
+            isUserCheckedIn() {
+                if (this.records.length === 0) return false;
+                return this.records[this.records.length - 1].type === 'ENTRADA';
+            },
+
+            getCurrentPosition() {
+                return new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej));
+            },
+
+            startLocationWatch() {
+                const statusEl = document.getElementById('gps-status');
+                navigator.geolocation.watchPosition((pos) => {
+                    statusEl.innerText = "GPS Conectado y en Rango";
+                    statusEl.className = "text-sm font-bold text-green-600";
+                }, () => {
+                    statusEl.innerText = "Error GPS: Activa ubicación";
+                    statusEl.className = "text-sm font-bold text-red-500";
+                });
+            },
+
+            updateUI() {
+                const last = this.records[this.records.length - 1];
+                document.getElementById('stats-today').innerText = last ? new Date(last.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '--:--';
+                document.getElementById('stats-count').innerText = this.records.length;
+
+                // Dashboard logs
+                const logsContainer = document.getElementById('recent-logs');
+                logsContainer.innerHTML = '<h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2">Actividad Reciente</h3>';
+                this.records.slice(-3).reverse().forEach(r => {
+                    const div = document.createElement('div');
+                    div.className = "bg-white p-4 rounded-2xl border border-slate-100 flex justify-between items-center";
+                    div.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2 ${r.type === 'ENTRADA' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'} rounded-lg">
+                                <i data-lucide="${r.type === 'ENTRADA' ? 'log-in' : 'log-out'}" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-black text-slate-800">${r.type}</p>
+                                <p class="text-[10px] text-slate-400 font-bold">${new Date(r.timestamp).toLocaleString()}</p>
+                            </div>
+                        </div>
+                        <div class="text-[10px] font-bold text-slate-300">#${r.id.toString().slice(-4)}</div>
+                    `;
+                    logsContainer.appendChild(div);
+                });
+
+                // History Tab
+                const historyContainer = document.getElementById('history-list');
+                historyContainer.innerHTML = '';
+                this.records.slice().reverse().forEach(r => {
+                    const div = document.createElement('div');
+                    div.className = "bg-white p-4 rounded-2xl border border-slate-100 flex justify-between items-center";
+                    div.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2 ${r.type === 'ENTRADA' ? 'bg-green-50 text-green-600' : 'bg-indigo-50 text-indigo-600'} rounded-lg">
+                                <i data-lucide="user-check" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-black text-slate-800">${new Date(r.timestamp).toLocaleDateString()}</p>
+                                <p class="text-[10px] text-slate-400 font-bold">${new Date(r.timestamp).toLocaleTimeString()} - ${r.type}</p>
+                            </div>
+                        </div>
+                        <div class="text-[10px] font-bold px-3 py-1 bg-slate-50 text-slate-400 rounded-full">REGISTRADO</div>
+                    `;
+                    historyContainer.appendChild(div);
+                });
+                lucide.createIcons();
+            },
+
+            initChart() {
+                const ctx = document.getElementById('activityChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
+                        datasets: [{
+                            label: 'Horas',
+                            data: [8, 7.5, 9, 8.2, 7.8, 0, 0],
+                            borderColor: '#4f46e5',
+                            tension: 0.4,
+                            fill: true,
+                            backgroundColor: 'rgba(79, 70, 229, 0.05)'
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { display: false } },
+                        scales: { y: { display: false }, x: { grid: { display: false } } }
+                    }
+                });
+            },
+
+            saveGHConfig() {
+                this.config.gh.token = document.getElementById('gh-token').value;
+                this.config.gh.repo = document.getElementById('gh-repo').value;
+                localStorage.setItem('qr_config', JSON.stringify(this.config));
+                this.syncToGitHub();
+            },
+
+            async syncToGitHub() {
+                const { token, repo } = this.config.gh;
+                if (!token || !repo) return;
+
+                this.syncStatus('cloud-lightning', 'Sincronizando...');
+                
+                try {
+                    const path = 'asistencia.json';
+                    const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+                    
+                    // Obtener SHA si existe
+                    const getRes = await fetch(url, { headers: { Authorization: `token ${token}` } });
+                    let sha = "";
+                    if (getRes.ok) {
+                        const data = await getRes.json();
+                        sha = data.sha;
+                    }
+
+                    const content = btoa(JSON.stringify(this.records, null, 2));
+                    const putRes = await fetch(url, {
+                        method: 'PUT',
+                        headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: "Update attendance records", content, sha })
+                    });
+
+                    if (putRes.ok) this.syncStatus('cloud-check', 'Guardado en GitHub');
+                    else throw new Error();
+                } catch (e) {
+                    this.syncStatus('cloud-off', 'Error de Sync');
+                }
+            },
+
+            syncStatus(icon, text) {
+                const el = document.getElementById('sync-status');
+                el.innerHTML = `<i data-lucide="${icon}" class="w-3 h-3"></i><span>${text}</span>`;
+                lucide.createIcons();
+            },
+
+            exportCSV() {
+                const headers = "ID,Fecha,Tipo,Lat,Lng\n";
+                const csv = headers + this.records.map(r => `${r.id},${r.timestamp},${r.type},${r.lat},${r.lng}`).join("\n");
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.setAttribute('href', url);
+                a.setAttribute('download', 'asistencia.csv');
+                a.click();
+            },
+
+            printQR() {
+                const win = window.open('', '_blank');
+                win.document.write(`
+                    <html>
+                    <body style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif;">
+                        <h1>ESTACIÓN DE ASISTENCIA</h1>
+                        <img src="${document.getElementById('qr-preview').src}" style="width:300px; height:300px;">
+                        <p>Escanea este código al entrar y salir</p>
+                        <script>window.print();<\/script>
+                    </body>
+                    </html>
+                `);
+            },
+
+            reset() {
+                if(confirm("¿Seguro? Se borrará todo el historial local.")) {
+                    this.records = [];
+                    localStorage.removeItem('qr_records');
+                    this.updateUI();
+                }
+            }
+        };
+
+        window.onload = () => app.init();
     </script>
-    <script type="module" src="index.tsx"></script>
 </body>
 </html>

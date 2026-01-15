@@ -1,6 +1,6 @@
 {
-  "name": "CheckIn Pro - Control de Asistencia QR",
-  "description": "Una aplicación avanzada para el control de ingreso y egreso de empleados mediante escaneo de códigos QR, con verificación de geolocalización en tiempo real y análisis de datos asistido por IA.",
+  "name": "CheckIn Pro",
+  "description": "Control de asistencia por QR con sincronización en GitHub",
   "requestFramePermissions": [
     "camera",
     "geolocation"
