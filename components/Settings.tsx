@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { AttendanceRecord, OfficeLocation, Employee } from '../types';
 import { 
   Trash2, MapPin, MonitorSmartphone, Building2, Save, 
-  QrCode, User, Link, Laptop, Globe, CheckCircle2, X, Smartphone,
-  CloudLightning, ExternalLink, HelpCircle
+  QrCode, User, Link as LinkIcon, Laptop, Globe, CheckCircle2, X, Smartphone,
+  CloudLightning, ExternalLink, HelpCircle, Copy, Share2
 } from 'lucide-react';
 
 interface SettingsProps {
@@ -32,6 +32,13 @@ const Settings: React.FC<SettingsProps> = ({
   const [showGuide, setShowGuide] = useState(false);
   const [showHostingGuide, setShowHostingGuide] = useState(false);
 
+  const currentUrl = window.location.href;
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(currentUrl);
+    showToast("¡Enlace copiado al portapapeles!");
+  };
+
   return (
     <div className="space-y-8 pb-32 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <header className="flex justify-between items-start">
@@ -48,25 +55,50 @@ const Settings: React.FC<SettingsProps> = ({
         </button>
       </header>
 
-      {/* GUIA DE DESPLIEGUE (HIDDEN BY DEFAULT) */}
+      {/* ENLACE PÚBLICO (EL QUE DEBES EJECUTAR) */}
+      <section className="bg-white rounded-[40px] p-8 border-2 border-indigo-100 shadow-xl shadow-indigo-50/50">
+        <h3 className="text-lg font-black text-slate-800 mb-4 flex items-center">
+          <LinkIcon size={20} className="mr-3 text-indigo-600" />
+          Enlace Público para Empleados
+        </h3>
+        <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+          Este es el link que debes enviar a tus empleados. Ellos deberán abrirlo en sus móviles para escanear el QR.
+        </p>
+        <div className="flex items-center space-x-2 bg-slate-50 p-2 rounded-3xl border border-slate-100">
+          <div className="flex-1 px-4 overflow-hidden">
+            <code className="text-[11px] font-mono text-indigo-600 truncate block">{currentUrl}</code>
+          </div>
+          <button 
+            onClick={copyToClipboard}
+            className="bg-indigo-600 text-white p-3 rounded-2xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+          >
+            <Copy size={18} />
+          </button>
+        </div>
+      </section>
+
+      {/* GUIA DE DESPLIEGUE */}
       {showHostingGuide && (
         <section className="bg-indigo-600 rounded-[40px] p-8 text-white animate-in slide-in-from-top-4 duration-300">
           <div className="flex items-center space-x-3 mb-4">
             <Globe size={24} />
-            <h3 className="text-xl font-bold">Cómo usar sin Node.js</h3>
+            <h3 className="text-xl font-bold">Cómo activar tu Web</h3>
           </div>
           <div className="space-y-4 text-sm text-indigo-100 leading-relaxed">
-            <p>Esta aplicación es <strong>estática</strong>, lo que significa que no necesita Node.js para funcionar una vez publicada.</p>
+            <p>Si aún no ves tu página online, sigue estos pasos en tu cuenta de GitHub:</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
               <div className="bg-white/10 p-5 rounded-3xl border border-white/20">
-                <span className="font-black text-white block mb-2">1. GitHub Pages (Recomendado)</span>
-                Ve a tu repo en GitHub > <strong>Settings</strong> > <strong>Pages</strong>. En "Branch", selecciona <strong>main</strong> y dale a <strong>Save</strong>. ¡Listo!
+                <span className="font-black text-white block mb-2">Paso 1</span>
+                Entra en tu repositorio > <strong>Settings</strong> (arriba a la derecha).
               </div>
               <div className="bg-white/10 p-5 rounded-3xl border border-white/20">
-                <span className="font-black text-white block mb-2">2. Uso Offline</span>
-                Una vez abras el link, ve a los ajustes de tu móvil e instálala como "Web App". Funcionará sin internet.
+                <span className="font-black text-white block mb-2">Paso 2</span>
+                Busca <strong>Pages</strong> en el menú lateral. En "Source", elige <strong>Deploy from branch</strong> y selecciona <strong>main</strong>.
               </div>
             </div>
+            <p className="mt-4 text-xs bg-black/20 p-4 rounded-2xl italic">
+              Una vez hecho esto, GitHub te dará un link que termina en ".github.io/..."
+            </p>
           </div>
         </section>
       )}
@@ -82,22 +114,22 @@ const Settings: React.FC<SettingsProps> = ({
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Tu Nombre</label>
             <input 
               type="text" value={uName} onChange={e => setUName(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-3xl px-6 py-4 font-bold text-slate-900 outline-none focus:ring-2 ring-indigo-500/20"
+              className="w-full bg-slate-50 border border-slate-200 rounded-3xl px-6 py-4 font-bold text-slate-900 outline-none"
             />
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Puesto</label>
             <input 
               type="text" value={uRole} onChange={e => setURole(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-3xl px-6 py-4 font-bold text-slate-900 outline-none focus:ring-2 ring-indigo-500/20"
+              className="w-full bg-slate-50 border border-slate-200 rounded-3xl px-6 py-4 font-bold text-slate-900 outline-none"
             />
           </div>
         </div>
         <button 
           onClick={() => onUpdateUser({ ...employee, name: uName, role: uRole })}
-          className="w-full mt-6 bg-slate-900 text-white py-4 rounded-3xl font-black text-sm flex items-center justify-center space-x-2 shadow-lg active:scale-95 transition-transform"
+          className="w-full mt-6 bg-slate-900 text-white py-4 rounded-3xl font-black text-sm flex items-center justify-center space-x-2"
         >
-          <Save size={18} /> <span>Guardar Cambios</span>
+          <Save size={18} /> <span>Guardar Mi Perfil</span>
         </button>
       </section>
 
@@ -120,7 +152,6 @@ const Settings: React.FC<SettingsProps> = ({
             <input 
               type="text" value={cLogo} onChange={e => setCLogo(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-3xl px-6 py-4 font-bold text-slate-900 outline-none"
-              placeholder="https://..."
             />
           </div>
         </div>
@@ -128,7 +159,7 @@ const Settings: React.FC<SettingsProps> = ({
           onClick={() => onUpdateBrand(cName, cLogo)}
           className="w-full mt-6 bg-indigo-600 text-white py-4 rounded-3xl font-black text-sm flex items-center justify-center space-x-2 shadow-lg"
         >
-          <Save size={18} /> <span>Aplicar Identidad</span>
+          <Save size={18} /> <span>Aplicar Marca</span>
         </button>
       </section>
 
@@ -136,11 +167,11 @@ const Settings: React.FC<SettingsProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm">
           <div className="bg-indigo-50 p-4 rounded-3xl w-fit mb-6 text-indigo-600"><QrCode size={28} /></div>
-          <h4 className="text-lg font-black text-slate-900 mb-2 text-center md:text-left">QR de Acceso</h4>
-          <p className="text-sm text-slate-400 mb-6 text-center md:text-left">Imprime este código y colócalo en la entrada.</p>
+          <h4 className="text-lg font-black text-slate-900 mb-2">QR de Acceso</h4>
+          <p className="text-sm text-slate-400 mb-6">Imprime este código y colócalo en la entrada.</p>
           <button 
             onClick={() => window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=CHECKIN_PRO_STATION_${cName}`, '_blank')}
-            className="w-full bg-slate-100 text-indigo-600 py-4 rounded-3xl font-black text-xs uppercase tracking-widest hover:bg-indigo-50"
+            className="w-full bg-slate-100 text-indigo-600 py-4 rounded-3xl font-black text-xs uppercase tracking-widest hover:bg-indigo-50 transition-colors"
           >
             Abrir QR para Imprimir
           </button>
@@ -148,8 +179,8 @@ const Settings: React.FC<SettingsProps> = ({
 
         <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm">
           <div className="bg-green-50 p-4 rounded-3xl w-fit mb-6 text-green-600"><MapPin size={28} /></div>
-          <h4 className="text-lg font-black text-slate-900 mb-2 text-center md:text-left">Zona de Oficina</h4>
-          <p className="text-sm text-slate-400 mb-6 text-center md:text-left">Usa tu ubicación actual para el centro de control.</p>
+          <h4 className="text-lg font-black text-slate-900 mb-2">Zona de Oficina</h4>
+          <p className="text-sm text-slate-400 mb-6">Usa tu ubicación actual para el centro de control.</p>
           <button 
             onClick={async () => {
               try {
@@ -157,7 +188,7 @@ const Settings: React.FC<SettingsProps> = ({
                 onUpdateOffice({ ...office, lat: pos.coords.latitude, lng: pos.coords.longitude });
               } catch (e) { showToast("Error GPS", "error"); }
             }}
-            className="w-full bg-slate-900 text-white py-4 rounded-3xl font-black text-xs uppercase tracking-widest hover:bg-black"
+            className="w-full bg-slate-900 text-white py-4 rounded-3xl font-black text-xs uppercase tracking-widest"
           >
             Fijar Coordenadas
           </button>
@@ -205,7 +236,7 @@ const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
         <button 
-          onClick={() => confirm("¿Deseas borrar todos los registros y volver a cero?") && onClearData()}
+          onClick={() => confirm("¿Deseas borrar todos los datos?") && onClearData()}
           className="bg-red-600 text-white px-10 py-4 rounded-3xl font-black text-xs uppercase tracking-widest"
         >
           Limpiar Todo
