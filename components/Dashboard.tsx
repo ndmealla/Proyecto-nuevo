@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { AttendanceRecord, Employee } from '../types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Calendar, Clock, TrendingUp, Sparkles, User, FileText, Share2, Info } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { TrendingUp, Sparkles, FileText, Share2, Info, CheckCircle2 } from 'lucide-react';
 import { analyzeAttendance } from '../services/aiService';
 
 interface DashboardProps {
@@ -16,7 +16,6 @@ const Dashboard: React.FC<DashboardProps> = ({ records, employee, onNavigateToSe
   const [isGenerating, setIsGenerating] = useState(false);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
 
-  // Group records by date for daily stats and chart calculations
   const dailyStats = useMemo(() => {
     const map: Record<string, { checkIn?: string, checkOut?: string, count: number }> = {};
     records.forEach(r => {
@@ -31,11 +30,9 @@ const Dashboard: React.FC<DashboardProps> = ({ records, employee, onNavigateToSe
     return map;
   }, [records]);
 
-  // Group individual entry/exit records into sessions for the history list
   const historySessions = useMemo(() => {
     const sessions: { id: string, date: string, checkIn: string | null, checkOut: string | null }[] = [];
     const sorted = [...records].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-    
     const activeEntries: Record<string, any> = {};
 
     sorted.forEach(r => {
@@ -82,28 +79,42 @@ const Dashboard: React.FC<DashboardProps> = ({ records, employee, onNavigateToSe
   };
 
   const handleShare = async () => {
+    // Obtenemos la URL actual de forma segura
+    let cleanUrl = window.location.href.split('?')[0].split('#')[0];
+    
+    // Si la URL termina en "https", la limpiamos (corrección para el error de duplicación detectado)
+    if (cleanUrl.endsWith('https')) {
+        cleanUrl = cleanUrl.slice(0, -5);
+    }
+
     const shareData = {
       title: 'CheckIn Pro - Acceso Empleados',
-      text: 'Usa este enlace para marcar tu asistencia hoy.',
-      url: window.location.origin + window.location.pathname // URL limpia y absoluta
+      text: 'Usa este enlace para marcar tu asistencia.',
+      url: cleanUrl
     };
 
     try {
-      // Intentar compartir si el navegador lo soporta y es una URL válida (HTTPS)
-      if (navigator.share && window.location.protocol === 'https:') {
+      // 1. Intentar Share API nativo (Móviles)
+      if (navigator.share && /Mobi|Android|iPhone/i.test(navigator.userAgent)) {
         await navigator.share(shareData);
-      } else {
-        throw new Error('Share API not available');
+        return;
       }
     } catch (err) {
-      // Fallback: Copiar al portapapeles
-      try {
-        await navigator.clipboard.writeText(shareData.url);
+      // Ignorar si el usuario cancela el share nativo
+    }
+
+    try {
+      // 2. Intentar Clipboard API (Escritorio / Contexto Seguro)
+      if (navigator.clipboard && window.isSecureContext) {
+        try { await navigator.clipboard.writeText(cleanUrl); } catch { const input = document.createElement('textarea'); input.value = cleanUrl; document.body.appendChild(input); input.select(); document.execCommand('copy'); document.body.removeChild(input); }
         setShareFeedback("¡Enlace copiado!");
         setTimeout(() => setShareFeedback(null), 3000);
-      } catch (clipErr) {
-        console.error("Error al copiar", clipErr);
+      } else {
+        throw new Error('Clipboard no disponible');
       }
+    } catch (err) {
+      // 3. Último recurso: Prompt manual (Funciona siempre, incluso sin permisos)
+      window.prompt("Copia este enlace para compartir el acceso:", cleanUrl);
     }
   };
 
@@ -112,7 +123,6 @@ const Dashboard: React.FC<DashboardProps> = ({ records, employee, onNavigateToSe
 
   return (
     <div className="space-y-6 pb-20">
-      {/* Header Perfil y Compartir */}
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center space-x-4">
           <div className="relative">
@@ -136,7 +146,7 @@ const Dashboard: React.FC<DashboardProps> = ({ records, employee, onNavigateToSe
         >
           {shareFeedback ? (
             <span className="flex items-center text-green-600 animate-in fade-in slide-in-from-bottom-1">
-              <Clock size={18} className="mr-2" /> {shareFeedback}
+              <CheckCircle2 size={18} className="mr-2" /> {shareFeedback}
             </span>
           ) : (
             <>
@@ -147,7 +157,6 @@ const Dashboard: React.FC<DashboardProps> = ({ records, employee, onNavigateToSe
         </button>
       </div>
 
-      {/* Info Box para Admin si no hay registros */}
       {records.length === 0 && employee.id === 'ADMIN' && (
         <div className="bg-indigo-900 p-6 rounded-[2rem] text-white flex items-start space-x-4">
           <Info className="shrink-0 text-indigo-400 mt-1" size={24} />
@@ -164,7 +173,6 @@ const Dashboard: React.FC<DashboardProps> = ({ records, employee, onNavigateToSe
         </div>
       )}
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-3xl text-white shadow-lg shadow-indigo-100">
           <p className="text-white/80 text-sm font-medium">Horas Semanales</p>
@@ -180,7 +188,6 @@ const Dashboard: React.FC<DashboardProps> = ({ records, employee, onNavigateToSe
         </div>
       </div>
 
-      {/* Charts */}
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
         <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center">
           <TrendingUp className="mr-2 text-indigo-600" size={20} />
@@ -200,7 +207,6 @@ const Dashboard: React.FC<DashboardProps> = ({ records, employee, onNavigateToSe
         </div>
       </div>
 
-      {/* AI Analysis Section */}
       {records.length > 0 && (
         <div className="bg-slate-900 rounded-3xl p-8 text-white">
           <div className="flex items-center space-x-2 mb-4">
@@ -224,7 +230,6 @@ const Dashboard: React.FC<DashboardProps> = ({ records, employee, onNavigateToSe
         </div>
       )}
 
-      {/* Historial Corto */}
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="p-6 border-b border-slate-50">
           <h3 className="font-bold text-slate-900 flex items-center">
