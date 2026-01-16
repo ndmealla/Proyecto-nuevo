@@ -2,103 +2,279 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#4f46e5">
-    <link rel="manifest" href="./manifest.json">
-    <title>CheckIn Pro | Gestión de Asistencia</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CheckIn Pro - Sistema de Asistencia</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        
-        :root {
-            --primary: #4f46e5;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-            margin: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        #root {
-            min-height: 100vh;
-        }
-
-        /* Estilos del Loader Inicial */
-        .initial-loader {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            width: 100%;
-            background: #ffffff;
-        }
-
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 5px solid #f1f5f9;
-            border-top: 5px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s cubic-bezier(0.55, 0.055, 0.675, 0.19) infinite;
-        }
-
-        .loader-text {
-            margin-top: 24px;
-            color: #64748b;
-            font-weight: 800;
-            font-size: 12px;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
     </style>
-    <script>
-        // Entorno global para compatibilidad
-        window.process = { env: { NODE_ENV: 'production' } };
-    </script>
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@^19.2.3",
-        "react-dom": "https://esm.sh/react-dom@^19.2.3",
-        "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
-        "react/": "https://esm.sh/react@^19.2.3/",
-        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-        "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
-        "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-        "html5-qrcode": "https://esm.sh/html5-qrcode@^2.3.8",
-        "recharts": "https://esm.sh/recharts@^3.6.0"
-      }
-    }
-    </script>
 </head>
-<body>
-    <div id="root">
-        <div class="initial-loader">
-            <div class="spinner"></div>
-            <p class="loader-text">Iniciando CheckIn Pro</p>
+<body class="bg-gray-100">
+    <div class="container">
+        <!-- Navigation -->
+        <nav class="bg-blue-600 text-white p-4 rounded mb-6">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold">CheckIn Pro</h1>
+                <div class="space-x-4">
+                    <button onclick="showTab('checkin')" class="px-4 py-2 bg-blue-700 rounded hover:bg-blue-800">Check-In</button>
+                    <button onclick="showTab('admin')" class="px-4 py-2 bg-blue-700 rounded hover:bg-blue-800">Administración</button>
+                    <button onclick="showTab('stats')" class="px-4 py-2 bg-blue-700 rounded hover:bg-blue-800">Estadísticas</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Check-In Tab -->
+        <div id="checkin" class="tab-content">
+            <div class="bg-white p-8 rounded shadow">
+                <h2 class="text-3xl font-bold mb-6 text-center">Sistema de Check-In</h2>
+                <div class="text-center">
+                    <p class="text-xl mb-4">Escanea el QR para registrarte</p>
+                    <div id="qrCode" class="mx-auto mb-6 flex justify-center"></div>
+                    <div id="checkinStatus" class="text-lg font-semibold mb-4"></div>
+                </div>
+                <div class="mt-8 p-4 bg-gray-100 rounded">
+                    <h3 class="font-bold mb-3">Información de Conexión:</h3>
+                    <p id="macAddress" class="text-sm">MAC: Detectando...</p>
+                    <p id="lastCheckIn" class="text-sm mt-2">Último registro: --</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Tab -->
+        <div id="admin" class="tab-content hidden">
+            <div class="bg-white p-8 rounded shadow">
+                <h2 class="text-3xl font-bold mb-6">Panel de Administración</h2>
+                
+                <!-- Agregar Empleado -->
+                <div class="mb-8 p-6 bg-gray-50 rounded">
+                    <h3 class="text-xl font-bold mb-4">Registrar Nuevo Empleado</h3>
+                    <div class="grid grid-cols-3 gap-4">
+                        <input type="text" id="empName" placeholder="Nombre" class="border p-2 rounded">
+                        <input type="text" id="empMAC" placeholder="Dirección MAC" class="border p-2 rounded">
+                        <button onclick="addEmployee()" class="bg-green-600 text-white p-2 rounded hover:bg-green-700">Agregar</button>
+                    </div>
+                </div>
+
+                <!-- Lista de Empleados -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-bold mb-4">Empleados Registrados</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border border-gray-300">
+                            <thead class="bg-gray-200">
+                                <tr>
+                                    <th class="border p-2">ID</th>
+                                    <th class="border p-2">Nombre</th>
+                                    <th class="border p-2">Dirección MAC</th>
+                                    <th class="border p-2">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeesList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Tab -->
+        <div id="stats" class="tab-content hidden">
+            <div class="bg-white p-8 rounded shadow">
+                <h2 class="text-3xl font-bold mb-6">Estadísticas</h2>
+                <div class="grid grid-cols-3 gap-6 mb-8">
+                    <div class="bg-blue-100 p-6 rounded text-center">
+                        <p class="text-sm text-gray-600">Total Empleados</p>
+                        <p id="totalEmps" class="text-3xl font-bold">0</p>
+                    </div>
+                    <div class="bg-green-100 p-6 rounded text-center">
+                        <p class="text-sm text-gray-600">Check-In Hoy</p>
+                        <p id="checkinToday" class="text-3xl font-bold">0</p>
+                    </div>
+                    <div class="bg-yellow-100 p-6 rounded text-center">
+                        <p class="text-sm text-gray-600">Registros Totales</p>
+                        <p id="totalRecords" class="text-3xl font-bold">0</p>
+                    </div>
+                </div>
+                <button onclick="exportCSV()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Exportar CSV</button>
+                <div id="recordsList" class="mt-8"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Punto de entrada de React -->
-    <script type="module" src="./index.tsx"></script>
-
     <script>
-        // Registro de PWA simplificado
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('PWA Lista'))
-                    .catch(err => console.debug('Offline no disponible'));
+        // Datos almacenados en localStorage
+        const storageKey = 'checkinProData';
+        
+        function getData() {
+            const data = localStorage.getItem(storageKey);
+            return data ? JSON.parse(data) : { employees: [], records: [] };
+        }
+        
+        function saveData(data) {
+            localStorage.setItem(storageKey, JSON.stringify(data));
+        }
+        
+        function getMAC(callback) {
+            // Simulación: genera una MAC pseudoaleatoria basada en el dispositivo
+            const userAgent = navigator.userAgent;
+            const hash = btoa(userAgent + Date.now()).substring(0, 17);
+            const mac = hash.replace(/(.{2})(?=.)/g, '$1:');
+            callback(mac);
+        }
+        
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tab).classList.remove('hidden');
+            if (tab === 'checkin') initQR();
+            if (tab === 'admin') refreshEmployeesList();
+            if (tab === 'stats') refreshStats();
+        }
+        
+        function initQR() {
+            const qrDiv = document.getElementById('qrCode');
+            qrDiv.innerHTML = '';
+            const qrURL = 'https://checkin.local/scan';
+            new QRCode(qrDiv, {
+                text: qrURL,
+                width: 300,
+                height: 300,
+                colorDark: '#000000',
+                colorLight: '#ffffff'
             });
         }
+        
+        function handleCheckIn() {
+            getMAC(function(mac) {
+                const data = getData();
+                const employee = data.employees.find(e => e.mac.toLowerCase() === mac.toLowerCase());
+                
+                if (!employee) {
+                    document.getElementById('checkinStatus').innerHTML = '<span class="text-red-600">MAC no registrada. Contacta al administrador.</span>';
+                    return;
+                }
+                
+                const now = new Date();
+                const record = {
+                    id: Date.now(),
+                    empId: employee.id,
+                    empName: employee.name,
+                    timestamp: now.toLocaleString('es-AR'),
+                    mac: mac
+                };
+                
+                data.records.push(record);
+                saveData(data);
+                
+                document.getElementById('checkinStatus').innerHTML = `<span class="text-green-600">✓ Bienvenido ${employee.name}!</span>`;
+                document.getElementById('lastCheckIn').textContent = `Último registro: ${record.timestamp}`;
+                
+                setTimeout(() => {
+                    document.getElementById('checkinStatus').innerHTML = '';
+                }, 3000);
+            });
+        }
+        
+        function addEmployee() {
+            const name = document.getElementById('empName').value.trim();
+            const mac = document.getElementById('empMAC').value.trim().toUpperCase();
+            
+            if (!name || !mac) {
+                alert('Por favor completa todos los campos');
+                return;
+            }
+            
+            const data = getData();
+            const employee = {
+                id: Date.now(),
+                name: name,
+                mac: mac
+            };
+            
+            data.employees.push(employee);
+            saveData(data);
+            
+            document.getElementById('empName').value = '';
+            document.getElementById('empMAC').value = '';
+            refreshEmployeesList();
+        }
+        
+        function deleteEmployee(id) {
+            if (confirm('¿Estás seguro de eliminar este empleado?')) {
+                const data = getData();
+                data.employees = data.employees.filter(e => e.id !== id);
+                saveData(data);
+                refreshEmployeesList();
+            }
+        }
+        
+        function refreshEmployeesList() {
+            const data = getData();
+            const tbody = document.getElementById('employeesList');
+            tbody.innerHTML = '';
+            
+            data.employees.forEach((emp, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="border p-2">${index + 1}</td>
+                    <td class="border p-2">${emp.name}</td>
+                    <td class="border p-2 font-mono text-sm">${emp.mac}</td>
+                    <td class="border p-2">
+                        <button onclick="deleteEmployee(${emp.id})" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Eliminar</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function refreshStats() {
+            const data = getData();
+            const today = new Date().toLocaleDateString('es-AR');
+            const todayRecords = data.records.filter(r => r.timestamp.startsWith(today.split('/').reverse().join('-')));
+            
+            document.getElementById('totalEmps').textContent = data.employees.length;
+            document.getElementById('checkinToday').textContent = todayRecords.length;
+            document.getElementById('totalRecords').textContent = data.records.length;
+            
+            let html = '<h3 class="text-xl font-bold mb-4 mt-6">Últimos Registros</h3><table class="w-full border-collapse border border-gray-300">';
+            html += '<thead class="bg-gray-200"><tr><th class="border p-2">Empleado</th><th class="border p-2">Fecha/Hora</th><th class="border p-2">MAC</th></tr></thead><tbody>';
+            
+            data.records.slice(-20).reverse().forEach(record => {
+                html += `<tr><td class="border p-2">${record.empName}</td><td class="border p-2">${record.timestamp}</td><td class="border p-2 font-mono text-sm">${record.mac}</td></tr>`;
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('recordsList').innerHTML = html;
+        }
+        
+        function exportCSV() {
+            const data = getData();
+            let csv = 'ID,Empleado,Timestamp,MAC\n';
+            data.records.forEach(r => {
+                csv += `${r.id},"${r.empName}","${r.timestamp}",${r.mac}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `checkin-export-${new Date().getTime()}.csv`;
+            a.click();
+        }
+        
+        // Inicialización
+        window.addEventListener('load', function() {
+            getMAC(function(mac) {
+                document.getElementById('macAddress').textContent = `MAC: ${mac}`;
+            });
+            
+            // Simular check-in automático cada 10 segundos para demo
+            // Descomenta si quieres pruebas automáticas
+            // setInterval(handleCheckIn, 10000);
+            
+            initQR();
+            // Para hacer click-to-checkin
+            document.getElementById('qrCode').addEventListener('click', handleCheckIn);
+        });
     </script>
 </body>
 </html>
