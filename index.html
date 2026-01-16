@@ -1,12 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CheckIn Pro - Control de Asistencia</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode.js/1.5.3/qrcode.min.js"></script>
+    <title>CheckIn Pro</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -20,44 +17,40 @@
         }
         .container {
             width: 100%;
-            max-width: 800px;
+            max-width: 900px;
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             padding: 40px;
+        }
+        .header {
             text-align: center;
-        }
-        .logo { font-size: 48px; margin-bottom: 20px; }
-        h1 {
-            color: #2d3748;
-            margin-bottom: 10px;
-            font-size: 32px;
-        }
-        .subtitle {
-            color: #718096;
             margin-bottom: 30px;
-            font-size: 14px;
         }
-        .qr-section {
-            background: #f7fafc;
-            padding: 30px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            border: 2px dashed #cbd5e0;
-        }
-        #qrCode {
-            display: inline-block;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-        }
+        .logo { font-size: 48px; margin-bottom: 15px; }
+        h1 { color: #2d3748; font-size: 32px; margin-bottom: 10px; }
+        .subtitle { color: #718096; font-size: 14px; margin-bottom: 20px; }
         .device-info {
             background: #edf2f7;
             padding: 15px;
             border-radius: 8px;
-            margin-bottom: 20px;
             font-size: 12px;
             color: #2d3748;
+            margin-bottom: 20px;
+        }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .section { padding: 20px; background: #f7fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .section h3 { color: #2d3748; margin-bottom: 15px; font-size: 16px; }
+        .qr-display {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px dashed #cbd5e0;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
         }
         .button {
             background: #667eea;
@@ -68,41 +61,27 @@
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            margin: 10px 5px;
+            margin: 8px 4px;
             transition: all 0.3s;
+            width: 100%;
         }
         .button:hover { background: #5568d3; transform: translateY(-2px); }
-        .button-secondary {
-            background: #e2e8f0;
-            color: #2d3748;
-        }
+        .button-secondary { background: #e2e8f0; color: #2d3748; }
         .button-secondary:hover { background: #cbd5e0; }
-        .scan-section {
-            margin-top: 30px;
-            padding-top: 30px;
-            border-top: 1px solid #e2e8f0;
-        }
-        video {
-            width: 100%;
-            max-width: 400px;
+        .status {
+            padding: 15px;
+            background: #f0fdf4;
+            border: 1px solid #86efac;
             border-radius: 8px;
-            margin: 20px 0;
-        }
-        .history {
-            margin-top: 30px;
-            text-align: left;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .history h3 {
-            color: #2d3748;
+            color: #16a34a;
             margin-bottom: 15px;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
+            display: none;
         }
+        .status.show { display: block; }
+        .status.error { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
         .record {
             padding: 12px;
-            background: #f7fafc;
+            background: white;
             margin-bottom: 10px;
             border-left: 4px solid #667eea;
             border-radius: 4px;
@@ -110,20 +89,20 @@
         }
         .record.entrada { border-left-color: #48bb78; }
         .record.salida { border-left-color: #f56565; }
-        .time { color: #718096; font-size: 12px; }
-        .status {
-            padding: 15px;
-            background: #f0fdf4;
-            border: 1px solid #86efac;
+        .time { color: #718096; font-size: 11px; margin-top: 5px; }
+        .employee-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+        .employee-btn {
+            padding: 12px;
+            background: white;
+            border: 2px solid #e2e8f0;
             border-radius: 8px;
-            color: #16a34a;
-            margin-bottom: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+            text-align: center;
         }
-        .error {
-            background: #fef2f2;
-            border-color: #fca5a5;
-            color: #dc2626;
-        }
+        .employee-btn:hover { border-color: #667eea; background: #f7fafc; }
+        video { width: 100%; max-width: 300px; border-radius: 8px; margin: 10px 0; }
     </style>
 <script type="importmap">
 {
@@ -141,74 +120,73 @@
 </head>
 <body>
     <div class="container">
-        <div class="logo">👥</div>
-        <h1>CheckIn Pro</h1>
-        <p class="subtitle">Control de Asistencia con QR</p>
-
-        <div class="device-info" id="deviceInfo">
-            📱 Detectando dispositivo...
+        <div class="header">
+            <div class="logo">👥</div>
+            <h1>CheckIn Pro</h1>
+            <p class="subtitle">Control de Asistencia con QR</p>
         </div>
 
-        <div id="status"></div>
+        <div class="device-info" id="deviceInfo">📱 Inicializando...</div>
+        <div class="status" id="status"></div>
 
-        <div class="qr-section">
-            <h3 style="margin-bottom: 15px;">Código QR de Entrada/Salida</h3>
-            <div id="qrCode"></div>
-            <p style="color: #718096; margin-top: 15px; font-size: 12px;">
-                Imprima o coloque este QR en la entrada
-            </p>
+        <div class="grid">
+            <div class="section">
+                <h3>Código QR Principal</h3>
+                <div class="qr-display" id="qrDisplay">CHECKIN_MAIN</div>
+                <p style="font-size: 11px; color: #718096; text-align: center; margin-top: 10px;">Código para impresión</p>
+            </div>
+
+            <div class="section">
+                <h3>Control de Terminal</h3>
+                <button class="button" onclick="app.configAdmin()">⚙️ Configurar Admin</button>
+                <button class="button button-secondary" onclick="app.simulateCheckIn()">📱 Simular Escaneo</button>
+                <button class="button button-secondary" onclick="app.downloadReport()">📊 Descargar Reporte</button>
+            </div>
         </div>
 
-        <button class="button" onclick="app.startScanning()">📱 Escanear Empleado</button>
-        <button class="button button-secondary" onclick="app.showSetup()">⚙️ Configurar Terminal</button>
-        <button class="button button-secondary" onclick="app.downloadReport()">📊 Descargar Reporte</button>
-
-        <div class="scan-section" id="scanSection" style="display: none;">
-            <h3>Escanear QR de Empleado</h3>
-            <video id="video" playsinline></video>
-            <p id="scanStatus" style="color: #718096; font-size: 12px;"></p>
-            <button class="button button-secondary" onclick="app.stopScanning()">Detener Escaneo</button>
+        <div class="section">
+            <h3>Empleados de Prueba</h3>
+            <div class="employee-list" id="employeeList"></div>
         </div>
 
-        <div class="history" id="history">
+        <div class="section">
             <h3>Registros del Día</h3>
             <div id="records"></div>
         </div>
     </div>
 
     <script>
+        const mockEmployees = [
+            { id: 'emp_001', name: 'Juan García', position: 'Gerente' },
+            { id: 'emp_002', name: 'Carlos Martinez', position: 'Operario' },
+            { id: 'emp_003', name: 'Ana López', position: 'Vendedor' },
+            { id: 'emp_004', name: 'Pedro Sánchez', position: 'Técnico' },
+            { id: 'emp_005', name: 'María Rodríguez', position: 'Administrativo' }
+        ];
+
         const app = {
             deviceMAC: null,
             adminUser: null,
             records: [],
-            scanning: false,
-            video: null,
-            canvas: null,
 
-            async init() {
+            init() {
                 this.getDeviceMAC();
                 this.loadConfig();
-                this.generateQR();
                 this.loadRecords();
+                this.renderEmployees();
                 this.updateUI();
             },
 
             getDeviceMAC() {
-                // Nota: En navegadores modernos no se puede obtener la MAC real por seguridad
-                // Se usa un identificador único basado en el navegador y dispositivo
                 let mac = localStorage.getItem('device_mac');
                 if (!mac) {
-                    const nav = navigator.userAgent;
-                    const timestamp = new Date().getTime();
-                    mac = 'XX:' + Math.random().toString(16).substr(2, 2).toUpperCase() + ':' +
-                          Math.random().toString(16).substr(2, 2).toUpperCase() + ':' +
-                          Math.random().toString(16).substr(2, 2).toUpperCase() + ':' +
-                          Math.random().toString(16).substr(2, 2).toUpperCase() + ':' +
-                          Math.random().toString(16).substr(2, 2).toUpperCase();
+                    const chars = '0123456789ABCDEF';
+                    mac = Array.from({ length: 6 }, () => 
+                        chars[Math.floor(Math.random() * 16)] + chars[Math.floor(Math.random() * 16)]
+                    ).join(':');
                     localStorage.setItem('device_mac', mac);
                 }
                 this.deviceMAC = mac;
-                this.updateDeviceInfo();
             },
 
             loadConfig() {
@@ -217,136 +195,7 @@
             },
 
             saveConfig() {
-                localStorage.setItem('terminal_config', JSON.stringify({
-                    adminUser: this.adminUser,
-                    deviceMAC: this.deviceMAC
-                }));
-            },
-
-            updateDeviceInfo() {
-                const info = document.getElementById('deviceInfo');
-                if (this.adminUser) {
-                    info.innerHTML = `📱 Dispositivo: ${this.deviceMAC}<br>👤 Administrador: ${this.adminUser}`;
-                } else {
-                    info.innerHTML = `📱 Dispositivo: ${this.deviceMAC}<br>⚠️ Terminal sin configurar`;
-                }
-            },
-
-            generateQR() {
-                const qrContent = `CHECKIN_MAIN_${this.deviceMAC}`;
-                const qrDiv = document.getElementById('qrCode');
-                qrDiv.innerHTML = '';
-                new QRCode(qrDiv, {
-                    text: qrContent,
-                    width: 250,
-                    height: 250,
-                    colorDark: '#667eea',
-                    colorLight: '#ffffff'
-                });
-            },
-
-            startScanning() {
-                if (this.scanning) return;
-                this.scanning = true;
-                document.getElementById('scanSection').style.display = 'block';
-                document.getElementById('scanStatus').textContent = 'Iniciando cámara...';
-
-                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-                    .then(stream => {
-                        this.video = document.getElementById('video');
-                        this.video.srcObject = stream;
-                        this.video.onloadedmetadata = () => {
-                            this.video.play();
-                            this.scanQR();
-                        };
-                    })
-                    .catch(err => {
-                        document.getElementById('scanStatus').textContent = '❌ Error: ' + err.message;
-                        this.scanning = false;
-                    });
-            },
-
-            scanQR() {
-                if (!this.scanning) return;
-                
-                this.canvas = this.canvas || document.createElement('canvas');
-                const ctx = this.canvas.getContext('2d');
-                const video = this.video;
-
-                if (video.videoWidth) {
-                    this.canvas.width = video.videoWidth;
-                    this.canvas.height = video.videoHeight;
-                    ctx.drawImage(video, 0, 0);
-                    
-                    const imageData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-                    const code = jsQR(imageData.data, imageData.width, imageData.height);
-
-                    if (code) {
-                        const data = code.data;
-                        if (data.includes('emp_')) {
-                            this.processCheckIn(data);
-                        } else {
-                            document.getElementById('scanStatus').textContent = '❌ QR inválido. Escanee el QR de un empleado.';
-                        }
-                    } else {
-                        document.getElementById('scanStatus').textContent = '🔍 Buscando código QR...';
-                    }
-                }
-                
-                requestAnimationFrame(() => this.scanQR());
-            },
-
-            stopScanning() {
-                this.scanning = false;
-                if (this.video && this.video.srcObject) {
-                    this.video.srcObject.getTracks().forEach(track => track.stop());
-                }
-                document.getElementById('scanSection').style.display = 'none';
-            },
-
-            processCheckIn(qrData) {
-                const employeeID = qrData.match(/emp_(\d+)/)?.[1] || 'desconocido';
-                const employeeName = qrData.match(/name_([^_]+)/)?.[1] || 'Empleado ' + employeeID;
-                
-                // Determinar si es entrada o salida
-                const lastRecord = this.records
-                    .filter(r => r.employeeID === employeeID)
-                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
-
-                const action = (!lastRecord || lastRecord.action === 'SALIDA') ? 'ENTRADA' : 'SALIDA';
-
-                const record = {
-                    id: Date.now(),
-                    timestamp: new Date().toLocaleString('es-AR'),
-                    deviceMAC: this.deviceMAC,
-                    adminUser: this.adminUser,
-                    employeeID: employeeID,
-                    employeeName: decodeURIComponent(employeeName).replace(/_/g, ' '),
-                    action: action
-                };
-
-                this.records.push(record);
-                this.saveRecords();
-                
-                this.stopScanning();
-                this.showStatus(`✅ ${record.employeeName} registrado ${action === 'ENTRADA' ? 'ENTRADA' : 'SALIDA'}`, false);
-                this.updateUI();
-            },
-
-            showStatus(message, isError = false) {
-                const status = document.getElementById('status');
-                status.innerHTML = `<div class="status ${isError ? 'error' : ''}">${message}</div>`;
-                setTimeout(() => { status.innerHTML = ''; }, 3000);
-            },
-
-            showSetup() {
-                const name = prompt('Ingrese el nombre del administrador de esta terminal:');
-                if (name) {
-                    this.adminUser = name;
-                    this.saveConfig();
-                    this.updateDeviceInfo();
-                    this.showStatus(`✅ Terminal configurada para: ${name}`);
-                }
+                localStorage.setItem('terminal_config', JSON.stringify({ adminUser: this.adminUser }));
             },
 
             loadRecords() {
@@ -361,17 +210,104 @@
             },
 
             updateUI() {
+                document.getElementById('deviceInfo').innerHTML = 
+                    `📱 Dispositivo: ${this.deviceMAC}<br>👤 Admin: ${this.adminUser}`;
+                
                 const recordsDiv = document.getElementById('records');
                 if (this.records.length === 0) {
-                    recordsDiv.innerHTML = '<p style="color: #718096;">Sin registros aún</p>';
+                    recordsDiv.innerHTML = '<p style="color: #718096; text-align: center; padding: 20px;">Sin registros aún</p>';
+                } else {
+                    recordsDiv.innerHTML = this.records
+                        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                        .map(r => `
+                            <div class="record ${r.action.toLowerCase()}">
+                                <strong>${r.name}</strong> - ${r.action}
+                                <div class="time">${r.timestamp}</div>
+                            </div>
+                        `).join('');
+                }
+            },
+
+            renderEmployees() {
+                const list = document.getElementById('employeeList');
+                list.innerHTML = mockEmployees.map(emp => `
+                    <button class="employee-btn" onclick="app.processCheckIn('${emp.id}', '${emp.name}')">
+                        ${emp.name}<br><small>${emp.position}</small>
+                    </button>
+                `).join('');
+            },
+
+            processCheckIn(empID, empName) {
+                const lastRecord = this.records
+                    .filter(r => r.id === empID)
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+
+                const action = (!lastRecord || lastRecord.action === 'SALIDA') ? 'ENTRADA' : 'SALIDA';
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const dateStr = now.toLocaleDateString('es-AR');
+
+                const record = {
+                    id: empID,
+                    name: empName,
+                    timestamp: `${dateStr} ${timeStr}`,
+                    action: action,
+                    mac: this.deviceMAC,
+                    admin: this.adminUser
+                };
+
+                this.records.push(record);
+                this.saveRecords();
+                
+                this.showStatus(`✅ ${empName} registrado ${action}`, false);
+                this.updateUI();
+            },
+
+            simulateCheckIn() {
+                const emp = mockEmployees[Math.floor(Math.random() * mockEmployees.length)];
+                this.processCheckIn(emp.id, emp.name);
+            },
+
+            configAdmin() {
+                const name = prompt('Ingrese nombre del administrador:');
+                if (name) {
+                    this.adminUser = name;
+                    this.saveConfig();
+                    this.showStatus(`✅ Administrador configurado: ${name}`);
+                    this.updateUI();
+                }
+            },
+
+            downloadReport() {
+                if (this.records.length === 0) {
+                    alert('No hay registros para descargar');
                     return;
                 }
+                const csv = 'Fecha,Hora,Empleado,Accion,MAC,Admin\n' + 
+                    this.records.map(r => {
+                        const parts = r.timestamp.split(' ');
+                        return `${parts[0]},${parts[1]},${r.name},${r.action},${r.mac},${r.admin}`;
+                    }).join('\n');
+                
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `checkin_${new Date().toLocaleDateString('es-AR')}.csv`;
+                a.click();
+            },
 
-                recordsDiv.innerHTML = this.records
-                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                    .map(r => `
-                        <div class="record ${r.action.toLowerCase()}">
-                            <strong>${r.employeeName}</strong> - ${r.action}
-                            <div class="time">${r.timestamp} | MAC: ${r.deviceMAC}</div>
-                        </div>
-                    `).join
+            showStatus(msg, isError = false) {
+                const status = document.getElementById('status');
+                status.textContent = msg;
+                status.classList.add('show');
+                if (isError) status.classList.add('error');
+                else status.classList.remove('error');
+                setTimeout(() => status.classList.remove('show'), 3000);
+            }
+        };
+
+        window.addEventListener('load', () => app.init());
+    </script>
+</body>
+</html>
