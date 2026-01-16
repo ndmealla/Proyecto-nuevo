@@ -191,7 +191,7 @@
 
         function addEmployee() {
             const name = document.getElementById('empName').value.trim();
-            const mac = document.getElementById('empMAC').value.trim().toUpperCase();
+            const mac = document.getElementById('empMAC').value.trim().toLowerCase();
 
             if (!name || !mac) {
                 alert('Por favor completa todos los campos');
