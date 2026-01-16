@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CheckIn Pro | Sistema de Asistencia</title>
+    <title>CheckIn Pro - Control de Asistencia</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode.js/1.5.3/qrcode.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background-color: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -21,318 +19,345 @@
         }
         .container {
             width: 100%;
-            max-width: 600px;
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 40px 30px;
+            max-width: 800px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
             text-align: center;
         }
-        .logo {
-            width: 60px;
-            height: 60px;
-            margin: 0 auto 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 32px;
-        }
+        .logo { font-size: 48px; margin-bottom: 20px; }
         h1 {
             color: #2d3748;
-            font-size: 28px;
             margin-bottom: 10px;
+            font-size: 32px;
         }
         .subtitle {
             color: #718096;
+            margin-bottom: 30px;
             font-size: 14px;
-            margin-bottom: 40px;
         }
-        .button-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
+        .qr-section {
+            background: #f7fafc;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 2px dashed #cbd5e0;
+        }
+        #qrCode {
+            display: inline-block;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+        }
+        .device-info {
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 8px;
             margin-bottom: 20px;
+            font-size: 12px;
+            color: #2d3748;
         }
-        button, .button {
-            padding: 12px 20px;
+        .button {
+            background: #667eea;
+            color: white;
             border: none;
+            padding: 12px 24px;
             border-radius: 8px;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
+            margin: 10px 5px;
+            transition: all 0.3s;
         }
-        .button-primary {
-            background-color: #667eea;
-            color: white;
-            grid-column: span 2;
-        }
-        .button-primary:hover {
-            background-color: #5568d3;
-            transform: translateY(-2px);
-        }
+        .button:hover { background: #5568d3; transform: translateY(-2px); }
         .button-secondary {
-            background-color: #e2e8f0;
+            background: #e2e8f0;
             color: #2d3748;
         }
-        .button-secondary:hover {
-            background-color: #cbd5e0;
-        }
-        .status-box {
-            background-color: #f0f4ff;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            text-align: left;
-            border-radius: 6px;
+        .button-secondary:hover { background: #cbd5e0; }
+        .scan-section {
             margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e2e8f0;
         }
-        .status-box p {
-            font-size: 13px;
-            color: #2d3748;
-            margin: 5px 0;
+        video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 8px;
+            margin: 20px 0;
         }
-        .employee-list {
+        .history {
             margin-top: 30px;
             text-align: left;
+            max-height: 400px;
+            overflow-y: auto;
         }
-        .employee-list h3 {
+        .history h3 {
             color: #2d3748;
-            font-size: 14px;
             margin-bottom: 15px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 2px solid #667eea;
             padding-bottom: 10px;
         }
-        .employee-item {
-            padding: 10px;
-            background-color: #f7fafc;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            border-left: 3px solid #667eea;
+        .record {
+            padding: 12px;
+            background: #f7fafc;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+            font-size: 13px;
         }
-        .employee-name {
-            font-weight: 600;
-            color: #2d3748;
-            font-size: 14px;
+        .record.entrada { border-left-color: #48bb78; }
+        .record.salida { border-left-color: #f56565; }
+        .time { color: #718096; font-size: 12px; }
+        .status {
+            padding: 15px;
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+            color: #16a34a;
+            margin-bottom: 20px;
         }
-        .employee-time {
-            font-size: 12px;
-            color: #718096;
-        }
-        .icon {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            margin-right: 8px;
-        }
-        .hidden {
-            display: none;
+        .error {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #dc2626;
         }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
-    "html5-qrcode": "https://esm.sh/html5-qrcode@^2.3.8"
-  }
-}
-</script>
 </head>
 <body>
     <div class="container">
         <div class="logo">👥</div>
         <h1>CheckIn Pro</h1>
-        <p class="subtitle">Sistema de Registro de Asistencia</p>
-        
-        <div id="mainView" class="main-view">
-            <div class="button-group">
-                <button class="button-secondary" onclick="app.goToDashboard()">📊 Dashboard</button>
-                <button class="button-secondary" onclick="app.goToScanner()">📱 Scanner QR</button>
-                <button class="button-primary" onclick="app.goToSettings()">⚙️ Crear Perfil</button>
-            </div>
-            
-            <div class="status-box">
-                <p><strong>Estado:</strong> Aplicación Cargada</p>
-                <p id="statusText">Selecciona una opción para comenzar</p>
-            </div>
+        <p class="subtitle">Control de Asistencia con QR</p>
+
+        <div class="device-info" id="deviceInfo">
+            📱 Detectando dispositivo...
         </div>
-        
-        <div id="settingsView" class="hidden">
-            <h2 style="color: #2d3748; margin-bottom: 20px;">Crear Nuevo Perfil</h2>
-            <input type="text" id="employeeName" placeholder="Nombre del Empleado" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
-            <input type="text" id="employeePosition" placeholder="Posición" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #cbd5e0; border-radius: 6px;">
-            <button class="button-primary" onclick="app.createEmployee()">Guardar Perfil</button>
-            <button class="button-secondary" onclick="app.backToMain()" style="width: 100%; margin-top: 10px;">← Volver</button>
+
+        <div id="status"></div>
+
+        <div class="qr-section">
+            <h3 style="margin-bottom: 15px;">Código QR de Entrada/Salida</h3>
+            <div id="qrCode"></div>
+            <p style="color: #718096; margin-top: 15px; font-size: 12px;">
+                Imprima o coloque este QR en la entrada
+            </p>
         </div>
-        
-        <div id="dashboardView" class="hidden">
-            <h2 style="color: #2d3748; margin-bottom: 20px;">Dashboard de Empleados</h2>
-            <div class="employee-list">
-                <h3>Empleados Registrados</h3>
-                <div id="employeeList">
-                    <p style="color: #718096;">No hay empleados registrados aún</p>
-                </div>
-            </div>
-            <button class="button-secondary" onclick="app.backToMain()" style="width: 100%; margin-top: 20px;">← Volver</button>
+
+        <button class="button" onclick="app.startScanning()">📱 Escanear Empleado</button>
+        <button class="button button-secondary" onclick="app.showSetup()">⚙️ Configurar Terminal</button>
+        <button class="button button-secondary" onclick="app.downloadReport()">📊 Descargar Reporte</button>
+
+        <div class="scan-section" id="scanSection" style="display: none;">
+            <h3>Escanear QR de Empleado</h3>
+            <video id="video" playsinline></video>
+            <p id="scanStatus" style="color: #718096; font-size: 12px;"></p>
+            <button class="button button-secondary" onclick="app.stopScanning()">Detener Escaneo</button>
         </div>
-        
-        <div id="scannerView" class="hidden">
-            <h2 style="color: #2d3748; margin-bottom: 20px;">Scanner QR</h2>
-            <div style="background-color: #f7fafc; padding: 40px; border-radius: 8px; margin-bottom: 20px;">
-                <p id="cameraStatus" style="color: #718096; font-size: 14px;">📷 Sistema de cámara</p>
-                <button class="button-primary" onclick="app.requestCamera()" style="margin-top: 15px; width: 100%;">Solicitar Acceso a Cámara</button>
-            </div>
-            <div id="qrResult" class="hidden" style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
-                <p style="color: #16a34a; font-size: 13px;">✓ Cámara funcionando correctamente</p>
-            </div>
-            <button class="button-secondary" onclick="app.backToMain()" style="width: 100%;">← Volver</button>
+
+        <div class="history" id="history">
+            <h3>Registros del Día</h3>
+            <div id="records"></div>
         </div>
     </div>
-    
+
     <script>
-        // App State
         const app = {
-            employees: JSON.parse(localStorage.getItem('employees') || '[]'),
-            currentView: 'main',
-            cameraPermissionGranted: false,
-            
-            // Navigation
-            goToSettings() {
-                document.getElementById('mainView').classList.add('hidden');
-                document.getElementById('settingsView').classList.remove('hidden');
-                document.getElementById('dashboardView').classList.add('hidden');
-                document.getElementById('scannerView').classList.add('hidden');
-                this.currentView = 'settings';
-                document.getElementById('employeeName').focus();
+            deviceMAC: null,
+            adminUser: null,
+            records: [],
+            scanning: false,
+            video: null,
+            canvas: null,
+
+            async init() {
+                this.getDeviceMAC();
+                this.loadConfig();
+                this.generateQR();
+                this.loadRecords();
+                this.updateUI();
             },
-            
-            goToDashboard() {
-                document.getElementById('mainView').classList.add('hidden');
-                document.getElementById('settingsView').classList.add('hidden');
-                document.getElementById('dashboardView').classList.remove('hidden');
-                document.getElementById('scannerView').classList.add('hidden');
-                this.currentView = 'dashboard';
-                this.loadEmployees();
-            },
-            
-            goToScanner() {
-                document.getElementById('mainView').classList.add('hidden');
-                document.getElementById('settingsView').classList.add('hidden');
-                document.getElementById('dashboardView').classList.add('hidden');
-                document.getElementById('scannerView').classList.remove('hidden');
-                this.currentView = 'scanner';
-                document.getElementById('qrResult').classList.add('hidden');
-            },
-            
-            backToMain() {
-                document.getElementById('mainView').classList.remove('hidden');
-                document.getElementById('settingsView').classList.add('hidden');
-                document.getElementById('dashboardView').classList.add('hidden');
-                document.getElementById('scannerView').classList.add('hidden');
-                this.currentView = 'main';
-                this.updateStatus('Selecciona una opción para comenzar');
-            },
-            
-            // Employee Management
-            createEmployee() {
-                const name = document.getElementById('employeeName').value.trim();
-                const position = document.getElementById('employeePosition').value.trim();
-                
-                if (!name || !position) {
-                    alert('Por favor completa todos los campos');
-                    return;
+
+            getDeviceMAC() {
+                // Nota: En navegadores modernos no se puede obtener la MAC real por seguridad
+                // Se usa un identificador único basado en el navegador y dispositivo
+                let mac = localStorage.getItem('device_mac');
+                if (!mac) {
+                    const nav = navigator.userAgent;
+                    const timestamp = new Date().getTime();
+                    mac = 'XX:' + Math.random().toString(16).substr(2, 2).toUpperCase() + ':' +
+                          Math.random().toString(16).substr(2, 2).toUpperCase() + ':' +
+                          Math.random().toString(16).substr(2, 2).toUpperCase() + ':' +
+                          Math.random().toString(16).substr(2, 2).toUpperCase() + ':' +
+                          Math.random().toString(16).substr(2, 2).toUpperCase();
+                    localStorage.setItem('device_mac', mac);
                 }
-                
-                const employee = {
-                    id: Date.now(),
-                    name: name,
-                    position: position,
-                    createdAt: new Date().toLocaleString('es-AR'),
-                    checkIns: []
-                };
-                
-                this.employees.push(employee);
-                this.saveEmployees();
-                
-                alert(`✓ Empleado "${name}" creado exitosamente`);
-                document.getElementById('employeeName').value = '';
-                document.getElementById('employeePosition').value = '';
-                
-                this.updateStatus(`Perfil creado: ${name}`);
+                this.deviceMAC = mac;
+                this.updateDeviceInfo();
             },
-            
-            loadEmployees() {
-                const listDiv = document.getElementById('employeeList');
-                
-                if (this.employees.length === 0) {
-                    listDiv.innerHTML = '<p style="color: #718096;">No hay empleados registrados aún</p>';
-                    return;
-                }
-                
-                listDiv.innerHTML = this.employees.map(emp => `
-                    <div class="employee-item">
-                        <div class="employee-name">${emp.name}</div>
-                        <div class="employee-time" style="margin-top: 5px;">📍 ${emp.position}</div>
-                        <div class="employee-time" style="margin-top: 5px;">Creado: ${emp.createdAt}</div>
-                        <button onclick="app.deleteEmployee(${emp.id})" style="margin-top: 8px; padding: 6px 12px; background-color: #fee2e2; color: #dc2626; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">🗑️ Eliminar</button>
-                    </div>
-                `).join('');
+
+            loadConfig() {
+                const config = JSON.parse(localStorage.getItem('terminal_config') || '{}');
+                this.adminUser = config.adminUser || 'Admin';
             },
-            
-            deleteEmployee(id) {
-                if (confirm('¿Deseas eliminar este empleado?')) {
-                    this.employees = this.employees.filter(emp => emp.id !== id);
-                    this.saveEmployees();
-                    this.loadEmployees();
-                    alert('✓ Empleado eliminado');
-                }
+
+            saveConfig() {
+                localStorage.setItem('terminal_config', JSON.stringify({
+                    adminUser: this.adminUser,
+                    deviceMAC: this.deviceMAC
+                }));
             },
-            
-            saveEmployees() {
-                localStorage.setItem('employees', JSON.stringify(this.employees));
-            },
-            
-            // Camera
-            requestCamera() {
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    navigator.mediaDevices.getUserMedia({ video: true })
-                        .then(stream => {
-                            this.cameraPermissionGranted = true;
-                            document.getElementById('cameraStatus').textContent = '✓ Cámara accesible';
-                            document.getElementById('qrResult').classList.remove('hidden');
-                            // Stop the stream
-                            stream.getTracks().forEach(track => track.stop());
-                            this.updateStatus('✓ Cámara funcionando correctamente');
-                        })
-                        .catch(error => {
-                            alert('Error de acceso a cámara: ' + error.message);
-                            this.updateStatus('✗ Error al acceder a cámara');
-                        });
+
+            updateDeviceInfo() {
+                const info = document.getElementById('deviceInfo');
+                if (this.adminUser) {
+                    info.innerHTML = `📱 Dispositivo: ${this.deviceMAC}<br>👤 Administrador: ${this.adminUser}`;
                 } else {
-                    alert('Tu navegador no soporta acceso a cámara');
+                    info.innerHTML = `📱 Dispositivo: ${this.deviceMAC}<br>⚠️ Terminal sin configurar`;
                 }
             },
-            
-            // Status
-            updateStatus(message) {
-                document.getElementById('statusText').textContent = message;
-            }
-        };
-        
-        // Initialize
-        window.addEventListener('load', () => {
-            app.loadEmployees();
-            app.updateStatus('✓ Aplicación lista');
-        });
-    </script>
-</body>
-</html>
+
+            generateQR() {
+                const qrContent = `CHECKIN_MAIN_${this.deviceMAC}`;
+                const qrDiv = document.getElementById('qrCode');
+                qrDiv.innerHTML = '';
+                new QRCode(qrDiv, {
+                    text: qrContent,
+                    width: 250,
+                    height: 250,
+                    colorDark: '#667eea',
+                    colorLight: '#ffffff'
+                });
+            },
+
+            startScanning() {
+                if (this.scanning) return;
+                this.scanning = true;
+                document.getElementById('scanSection').style.display = 'block';
+                document.getElementById('scanStatus').textContent = 'Iniciando cámara...';
+
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                    .then(stream => {
+                        this.video = document.getElementById('video');
+                        this.video.srcObject = stream;
+                        this.video.onloadedmetadata = () => {
+                            this.video.play();
+                            this.scanQR();
+                        };
+                    })
+                    .catch(err => {
+                        document.getElementById('scanStatus').textContent = '❌ Error: ' + err.message;
+                        this.scanning = false;
+                    });
+            },
+
+            scanQR() {
+                if (!this.scanning) return;
+                
+                this.canvas = this.canvas || document.createElement('canvas');
+                const ctx = this.canvas.getContext('2d');
+                const video = this.video;
+
+                if (video.videoWidth) {
+                    this.canvas.width = video.videoWidth;
+                    this.canvas.height = video.videoHeight;
+                    ctx.drawImage(video, 0, 0);
+                    
+                    const imageData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                    if (code) {
+                        const data = code.data;
+                        if (data.includes('emp_')) {
+                            this.processCheckIn(data);
+                        } else {
+                            document.getElementById('scanStatus').textContent = '❌ QR inválido. Escanee el QR de un empleado.';
+                        }
+                    } else {
+                        document.getElementById('scanStatus').textContent = '🔍 Buscando código QR...';
+                    }
+                }
+                
+                requestAnimationFrame(() => this.scanQR());
+            },
+
+            stopScanning() {
+                this.scanning = false;
+                if (this.video && this.video.srcObject) {
+                    this.video.srcObject.getTracks().forEach(track => track.stop());
+                }
+                document.getElementById('scanSection').style.display = 'none';
+            },
+
+            processCheckIn(qrData) {
+                const employeeID = qrData.match(/emp_(\d+)/)?.[1] || 'desconocido';
+                const employeeName = qrData.match(/name_([^_]+)/)?.[1] || 'Empleado ' + employeeID;
+                
+                // Determinar si es entrada o salida
+                const lastRecord = this.records
+                    .filter(r => r.employeeID === employeeID)
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+
+                const action = (!lastRecord || lastRecord.action === 'SALIDA') ? 'ENTRADA' : 'SALIDA';
+
+                const record = {
+                    id: Date.now(),
+                    timestamp: new Date().toLocaleString('es-AR'),
+                    deviceMAC: this.deviceMAC,
+                    adminUser: this.adminUser,
+                    employeeID: employeeID,
+                    employeeName: decodeURIComponent(employeeName).replace(/_/g, ' '),
+                    action: action
+                };
+
+                this.records.push(record);
+                this.saveRecords();
+                
+                this.stopScanning();
+                this.showStatus(`✅ ${record.employeeName} registrado ${action === 'ENTRADA' ? 'ENTRADA' : 'SALIDA'}`, false);
+                this.updateUI();
+            },
+
+            showStatus(message, isError = false) {
+                const status = document.getElementById('status');
+                status.innerHTML = `<div class="status ${isError ? 'error' : ''}">${message}</div>`;
+                setTimeout(() => { status.innerHTML = ''; }, 3000);
+            },
+
+            showSetup() {
+                const name = prompt('Ingrese el nombre del administrador de esta terminal:');
+                if (name) {
+                    this.adminUser = name;
+                    this.saveConfig();
+                    this.updateDeviceInfo();
+                    this.showStatus(`✅ Terminal configurada para: ${name}`);
+                }
+            },
+
+            loadRecords() {
+                const today = new Date().toLocaleDateString('es-AR');
+                const saved = JSON.parse(localStorage.getItem('checkin_records_' + today) || '[]');
+                this.records = saved;
+            },
+
+            saveRecords() {
+                const today = new Date().toLocaleDateString('es-AR');
+                localStorage.setItem('checkin_records_' + today, JSON.stringify(this.records));
+            },
+
+            updateUI() {
+                const recordsDiv = document.getElementById('records');
+                if (this.records.length === 0) {
+                    recordsDiv.innerHTML = '<p style="color: #718096;">Sin registros aún</p>';
+                    return;
+                }
+
+                recordsDiv.innerHTML = this.records
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                    .map(r => `
+                        <div class="record ${r.action.toLowerCase()}">
+                            <strong>${r.employeeName}</strong> - ${r.action}
+                            <div class="time">${r.timestamp} | MAC: ${r.deviceMAC}</div>
+                        </div>
+                    `).join
