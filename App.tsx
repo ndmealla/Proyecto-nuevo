@@ -6,7 +6,8 @@ import Scanner from './components/Scanner';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
 import { getCurrentPosition } from './utils/geoUtils';
-import { LayoutGrid, Camera, History, Settings as SettingsIcon, CheckCircle2, UserPlus, ArrowRight } from 'lucide-react';
+import { syncRecordsToGitHub } from './services/githubService';
+import { LayoutGrid, Camera, History, Settings as SettingsIcon, CheckCircle2, UserPlus, ArrowRight, Cloud } from 'lucide-react';
 
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
@@ -17,7 +18,7 @@ const App: React.FC = () => {
   const [companyName, setCompanyName] = useState('CheckIn Pro');
   const [companyLogo, setCompanyLogo] = useState('https://cdn-icons-png.flaticon.com/512/2913/2913444.png');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error', icon?: React.ReactNode} | null>(null);
 
   useEffect(() => {
     const savedRecords = localStorage.getItem(STORAGE_KEYS.RECORDS);
@@ -38,8 +39,8 @@ const App: React.FC = () => {
     if (savedCompany) setCompanyName(savedCompany);
   }, []);
 
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-    setToast({ message, type });
+  const showToast = (message: string, type: 'success' | 'error' = 'success', icon?: React.ReactNode) => {
+    setToast({ message, type, icon });
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -83,6 +84,13 @@ const App: React.FC = () => {
       setRecords(updatedRecords);
       localStorage.setItem(STORAGE_KEYS.RECORDS, JSON.stringify(updatedRecords));
       showToast(`${newRecord.type} registrada`);
+
+      // Intentar sincronizar con GitHub
+      const syncOk = await syncRecordsToGitHub(updatedRecords);
+      if (syncOk) {
+        showToast("Sincronizado con la nube", "success", <Cloud size={16} />);
+      }
+
       setActiveView('dashboard');
     } catch (e) {
       showToast("Error de validación", "error");
@@ -161,7 +169,7 @@ const App: React.FC = () => {
 
       {toast && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-2xl shadow-2xl bg-slate-900 text-white flex items-center space-x-3 animate-in fade-in slide-in-from-top-2">
-          <CheckCircle2 size={18} className="text-indigo-400" />
+          {toast.icon || <CheckCircle2 size={18} className="text-indigo-400" />}
           <span className="font-bold text-sm">{toast.message}</span>
         </div>
       )}
