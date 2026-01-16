@@ -10,13 +10,12 @@ export interface AttendanceRecord {
   id: string;
   employeeId: string;
   employeeName: string;
-  checkIn: string; // ISO String
-  checkOut?: string; // ISO String
+  timestamp: string; // ISO String
   date: string; // YYYY-MM-DD
+  type: 'ENTRADA' | 'SALIDA';
   location: {
     lat: number;
     lng: number;
-    accuracy: number;
   };
 }
 
@@ -27,9 +26,10 @@ export interface OfficeLocation {
   address: string;
 }
 
-export type ViewType = 'scanner' | 'dashboard' | 'history' | 'settings';
+export type ViewType = 'scanner' | 'dashboard' | 'history' | 'settings' | 'onboarding';
 
 export interface AppConfig {
   companyName: string;
   logoUrl: string;
+  employees: Employee[];
 }
