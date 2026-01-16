@@ -159,6 +159,7 @@
             getMAC(function(mac) {
                 const data = getData();
                 const employee = data.employees.find(e => e.mac.toLowerCase() === mac.toLowerCase());
+                                                    );
                 
                 if (!employee) {
                     document.getElementById('checkinStatus').innerHTML = '<span class="error">❌ MAC no registrada. Agrega el empleado en Administración.</span>';
