@@ -2,19 +2,22 @@
 import React, { useState, useMemo } from 'react';
 import { AttendanceRecord, Employee } from '../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Sparkles, FileText, Share2, Info, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, Sparkles, FileText, Share2, Info, CheckCircle2, Copy, Terminal } from 'lucide-react';
 import { analyzeAttendance } from '../services/aiService';
 
 interface DashboardProps {
   records: AttendanceRecord[];
   employee: Employee;
+  employees: Employee[];
+  companyName: string;
   onNavigateToSettings?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ records, employee, onNavigateToSettings }) => {
+const Dashboard: React.FC<DashboardProps> = ({ records, employee, employees, companyName, onNavigateToSettings }) => {
   const [aiReport, setAiReport] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+  const [showManualCode, setShowManualCode] = useState(false);
 
   const dailyStats = useMemo(() => {
     const map: Record<string, { checkIn?: string, checkOut?: string, count: number }> = {};
@@ -78,43 +81,39 @@ const Dashboard: React.FC<DashboardProps> = ({ records, employee, onNavigateToSe
     setIsGenerating(false);
   };
 
-  const handleShare = async () => {
-    // Obtenemos la URL actual de forma segura
-    let cleanUrl = window.location.href.split('?')[0].split('#')[0];
-    
-    // Si la URL termina en "https", la limpiamos (corrección para el error de duplicación detectado)
-    if (cleanUrl.endsWith('https')) {
-        cleanUrl = cleanUrl.slice(0, -5);
-    }
+  // Función para codificación segura de Base64 con UTF-8
+  const safeBtoa = (str: string) => btoa(unescape(encodeURIComponent(str)));
 
-    const shareData = {
-      title: 'CheckIn Pro - Acceso Empleados',
-      text: 'Usa este enlace para marcar tu asistencia.',
-      url: cleanUrl
+  const getSetupCode = () => {
+    const configToShare = {
+      companyName,
+      employees: employees.map(e => ({ id: e.id, name: e.name, role: e.role, photo: e.photo }))
     };
+    return safeBtoa(JSON.stringify(configToShare));
+  };
 
+  const handleShare = async () => {
     try {
-      // 1. Intentar Share API nativo (Móviles)
-      if (navigator.share && /Mobi|Android|iPhone/i.test(navigator.userAgent)) {
-        await navigator.share(shareData);
-        return;
-      }
-    } catch (err) {
-      // Ignorar si el usuario cancela el share nativo
-    }
+      let currentUrl = window.location.origin + window.location.pathname;
+      
+      const setupParam = getSetupCode();
+      const fullShareUrl = `${currentUrl}${currentUrl.endsWith('/') ? '' : '/'}?setup=${setupParam}`;
 
-    try {
-      // 2. Intentar Clipboard API (Escritorio / Contexto Seguro)
-      if (navigator.clipboard && window.isSecureContext) {
-        try { await navigator.clipboard.writeText(cleanUrl); } catch { const input = document.createElement('textarea'); input.value = cleanUrl; document.body.appendChild(input); input.select(); document.execCommand('copy'); document.body.removeChild(input); }
-        setShareFeedback("¡Enlace copiado!");
-        setTimeout(() => setShareFeedback(null), 3000);
+      if (navigator.share) {
+        await navigator.share({
+          title: `Acceso a ${companyName}`,
+          text: `Registra tu asistencia en ${companyName}:`,
+          url: fullShareUrl
+        });
+        setShareFeedback("¡Compartido!");
       } else {
-        throw new Error('Clipboard no disponible');
+        await navigator.clipboard.writeText(fullShareUrl);
+        setShareFeedback("Enlace copiado");
       }
+      setTimeout(() => setShareFeedback(null), 3000);
     } catch (err) {
-      // 3. Último recurso: Prompt manual (Funciona siempre, incluso sin permisos)
-      window.prompt("Copia este enlace para compartir el acceso:", cleanUrl);
+      console.error("Error sharing:", err);
+      setShowManualCode(true);
     }
   };
 
@@ -140,119 +139,174 @@ const Dashboard: React.FC<DashboardProps> = ({ records, employee, onNavigateToSe
             <p className="text-sm text-slate-500">{employee.role}</p>
           </div>
         </div>
-        <button 
-          onClick={handleShare}
-          className="bg-indigo-50 text-indigo-600 px-6 py-3 rounded-2xl font-bold text-sm flex items-center hover:bg-indigo-100 transition-all w-full md:w-auto justify-center relative overflow-hidden"
-        >
-          {shareFeedback ? (
-            <span className="flex items-center text-green-600 animate-in fade-in slide-in-from-bottom-1">
-              <CheckCircle2 size={18} className="mr-2" /> {shareFeedback}
-            </span>
-          ) : (
-            <>
-              <Share2 size={18} className="mr-2" />
-              Compartir Acceso
-            </>
-          )}
-        </button>
+        <div className="flex flex-col w-full md:w-auto space-y-2">
+          <button 
+            onClick={handleShare}
+            className="bg-indigo-600 text-white px-6 py-4 rounded-2xl font-black text-xs uppercase flex items-center hover:bg-indigo-700 transition-all w-full md:w-auto justify-center shadow-lg shadow-indigo-100"
+          >
+            {shareFeedback ? (
+              <span className="flex items-center animate-in fade-in zoom-in-95">
+                <CheckCircle2 size={16} className="mr-2" /> {shareFeedback}
+              </span>
+            ) : (
+              <>
+                <Share2 size={16} className="mr-2" />
+                Compartir Acceso
+              </>
+            )}
+          </button>
+          <button 
+            onClick={() => setShowManualCode(!showManualCode)}
+            className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-center hover:text-indigo-600 transition-colors"
+          >
+            {showManualCode ? 'Ocultar código' : '¿Problemas con el enlace?'}
+          </button>
+        </div>
       </div>
 
+      {showManualCode && (
+        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 animate-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-indigo-400 font-black text-[10px] uppercase tracking-widest flex items-center">
+              <Terminal size={14} className="mr-2" /> Código de Configuración Manual
+            </h4>
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(getSetupCode());
+                setShareFeedback("Código copiado");
+                setTimeout(() => setShareFeedback(null), 3000);
+              }}
+              className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-all"
+            >
+              <Copy size={16} />
+            </button>
+          </div>
+          <p className="text-slate-400 text-[11px] mb-4 leading-relaxed">Si el enlace 404 persiste, copia este código y pásalo manualmente a tus empleados para que lo peguen en "Importar Código".</p>
+          <div className="bg-black/40 p-4 rounded-xl font-mono text-[9px] text-indigo-300 break-all max-h-32 overflow-y-auto border border-white/5">
+            {getSetupCode()}
+          </div>
+        </div>
+      )}
+
       {records.length === 0 && employee.id === 'ADMIN' && (
-        <div className="bg-indigo-900 p-6 rounded-[2rem] text-white flex items-start space-x-4">
-          <Info className="shrink-0 text-indigo-400 mt-1" size={24} />
+        <div className="bg-indigo-900 p-6 rounded-[2.5rem] text-white flex items-start space-x-4">
+          <div className="p-3 bg-white/10 rounded-2xl">
+            <Info className="text-indigo-300" size={24} />
+          </div>
           <div>
-            <p className="font-bold mb-1">Modo Administrador Activo</p>
-            <p className="text-sm text-indigo-200 mb-4">Para ver el Directorio de Empleados y configurar la empresa, dirígete a la pestaña de Ajustes.</p>
+            <p className="font-bold mb-1">Pasos Iniciales</p>
+            <p className="text-sm text-indigo-200 mb-4 leading-relaxed">Configura el directorio y usa "Compartir Acceso" para que los empleados instalen la App en sus celulares.</p>
             <button 
               onClick={onNavigateToSettings}
-              className="bg-white text-indigo-900 px-4 py-2 rounded-xl font-bold text-xs uppercase"
+              className="bg-white text-indigo-900 px-5 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest"
             >
-              Configurar Directorio
+              Ir a Ajustes
             </button>
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-3xl text-white shadow-lg shadow-indigo-100">
-          <p className="text-white/80 text-sm font-medium">Horas Semanales</p>
-          <h2 className="text-3xl font-bold mt-1">{totalHoursWorked.toFixed(1)}h</h2>
+        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-[2.5rem] text-white shadow-xl shadow-indigo-100">
+          <p className="text-white/80 text-[10px] font-black uppercase tracking-widest">Horas Semanales</p>
+          <h2 className="text-4xl font-black mt-2">{totalHoursWorked.toFixed(1)}h</h2>
         </div>
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-          <p className="text-slate-500 text-sm font-medium">Promedio Diario</p>
-          <h2 className="text-3xl font-bold text-slate-900 mt-1">{avgHours.toFixed(1)}h</h2>
+        <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100">
+          <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Promedio Diario</p>
+          <h2 className="text-4xl font-black text-slate-900 mt-2">{avgHours.toFixed(1)}h</h2>
         </div>
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-          <p className="text-slate-500 text-sm font-medium">Asistencias Mes</p>
-          <h2 className="text-3xl font-bold text-slate-900 mt-1">{records.filter(r => new Date(r.date).getMonth() === new Date().getMonth()).length}</h2>
+        <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100">
+          <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Registros Mes</p>
+          <h2 className="text-4xl font-black text-slate-900 mt-2">{records.filter(r => new Date(r.date).getMonth() === new Date().getMonth()).length}</h2>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-        <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center">
-          <TrendingUp className="mr-2 text-indigo-600" size={20} />
+      <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100">
+        <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center">
+          <TrendingUp className="mr-3 text-indigo-600" size={20} />
           Actividad Reciente
         </h3>
-        <div className="h-48 w-full">
+        <div className="h-56 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
-              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
+              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} />
               <Tooltip 
-                cursor={{fill: '#f8fafc'}}
-                contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                cursor={{fill: '#f1f5f9', radius: 10}}
+                contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 800}}
               />
-              <Bar dataKey="hours" radius={[4, 4, 0, 0]} fill="#4f46e5" />
+              <Bar dataKey="hours" radius={[8, 8, 8, 8]} fill="#4f46e5" barSize={32} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {records.length > 0 && (
-        <div className="bg-slate-900 rounded-3xl p-8 text-white">
-          <div className="flex items-center space-x-2 mb-4">
-            <Sparkles className="text-indigo-400" size={24} />
-            <h3 className="text-xl font-bold">Análisis con IA</h3>
+        <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-10">
+            <Sparkles size={120} />
+          </div>
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="bg-indigo-500 p-2 rounded-xl">
+              <Sparkles className="text-white" size={24} />
+            </div>
+            <h3 className="text-2xl font-black tracking-tight">Análisis Inteligente</h3>
           </div>
           {aiReport ? (
-            <div className="prose prose-invert max-w-none">
-              <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">{aiReport}</p>
-              <button onClick={() => setAiReport(null)} className="mt-4 text-xs text-indigo-400 font-bold uppercase tracking-widest">Cerrar Análisis</button>
+            <div className="animate-in fade-in slide-in-from-bottom-4">
+              <div className="bg-white/5 p-6 rounded-3xl border border-white/10">
+                <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap font-medium">{aiReport}</p>
+              </div>
+              <button onClick={() => setAiReport(null)} className="mt-6 text-[10px] text-indigo-400 font-black uppercase tracking-widest hover:text-white transition-colors">Solicitar nuevo análisis</button>
             </div>
           ) : (
             <button 
               onClick={handleGenerateAI}
               disabled={isGenerating}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-2xl font-bold transition-all disabled:opacity-50 text-sm"
+              className="bg-white text-slate-900 px-8 py-4 rounded-2xl font-black text-xs uppercase flex items-center space-x-3 transition-all active:scale-95 disabled:opacity-50"
             >
-              {isGenerating ? "Procesando..." : "Generar Reporte IA"}
+              {isGenerating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Analizando...</span>
+                </>
+              ) : (
+                <span>Obtener Reporte de IA</span>
+              )}
             </button>
           )}
         </div>
       )}
 
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-6 border-b border-slate-50">
-          <h3 className="font-bold text-slate-900 flex items-center">
-            <FileText className="mr-2 text-slate-400" size={20} />
-            Últimas Marcas
+      <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden">
+        <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+          <h3 className="font-black text-slate-900 flex items-center">
+            <FileText className="mr-3 text-slate-400" size={22} />
+            Historial de Marcas
           </h3>
         </div>
         <div className="divide-y divide-slate-50">
           {historySessions.slice(0, 5).map(session => (
-            <div key={session.id} className="p-4 flex items-center justify-between">
+            <div key={session.id} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
               <div>
-                <p className="font-bold text-slate-800 text-sm">{session.date}</p>
-                <p className="text-[10px] text-slate-400 uppercase font-black">
-                  {session.checkIn ? `Entrada: ${new Date(session.checkIn).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}` : '---'} 
-                  {session.checkOut ? ` • Salida: ${new Date(session.checkOut).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}` : ''}
-                </p>
+                <p className="font-black text-slate-800 text-sm">{session.date}</p>
+                <div className="flex items-center space-x-2 mt-1">
+                  <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">
+                    {session.checkIn ? `Entrada ${new Date(session.checkIn).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}` : '---'} 
+                    {session.checkOut ? ` • Salida ${new Date(session.checkOut).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}` : ''}
+                  </p>
+                </div>
               </div>
-              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${session.checkOut ? 'bg-slate-100 text-slate-500' : 'bg-green-100 text-green-600'}`}>
-                {session.checkOut ? 'Cerrado' : 'Abierto'}
+              <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${session.checkOut ? 'bg-slate-100 text-slate-500' : 'bg-green-50 text-green-600 border border-green-100'}`}>
+                {session.checkOut ? 'Cerrado' : 'En curso'}
               </span>
             </div>
           ))}
-          {historySessions.length === 0 && <p className="p-8 text-center text-slate-400 text-sm italic">No hay registros hoy</p>}
+          {historySessions.length === 0 && (
+            <div className="p-12 text-center text-slate-300">
+               <FileText className="mx-auto mb-4 opacity-20" size={48} />
+               <p className="text-sm font-bold italic">Aún no hay registros de asistencia</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
