@@ -1,271 +1,145 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CheckIn Pro</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background: #f5f5f5; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-    nav { background: #0066cc; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-    nav h1 { font-size: 24px; }
-    nav button { background: #005ab8; color: white; border: none; padding: 10px 20px; margin-left: 10px; cursor: pointer; border-radius: 5px; }
-    nav button:hover { background: #004a99; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    h2 { color: #333; margin-bottom: 20px; font-size: 28px; text-align: center; }
-    h3 { color: #555; margin: 20px 0 15px 0; font-size: 18px; }
-    .input-group { display: grid; grid-template-columns: 1fr 1fr 200px; gap: 10px; margin-bottom: 20px; }
-    input, button { padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
-    input { border: 1px solid #ddd; }
-    button { background: #0066cc; color: white; border: none; cursor: pointer; }
-    button:hover { background: #005ab8; }
-    button.danger { background: #cc3333; }
-    button.danger:hover { background: #aa2222; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-    table th { background: #f0f0f0; font-weight: bold; }
-    table tr:hover { background: #f9f9f9; }
-    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-    .stat-card { background: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    .stat-value { font-size: 36px; font-weight: bold; color: #0066cc; margin: 10px 0; }
-    .qr-container { text-align: center; margin: 30px 0; }
-    .qr-container img { max-width: 300px; border: 2px solid #0066cc; padding: 10px; background: white; border-radius: 8px; }
-    .info-box { background: #f0f0f0; padding: 15px; border-radius: 5px; margin-top: 20px; }
-    .info-box p { margin: 8px 0; color: #555; }
-    .success { color: #228B22; font-size: 18px; font-weight: bold; }
-    .error { color: #cc3333; font-size: 18px; font-weight: bold; }
-    .center { text-align: center; }
-    .qr-clickable { cursor: pointer; transition: transform 0.2s; }
-    .qr-clickable:hover { transform: scale(1.05); }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CheckIn Pro</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        nav { background: #0066cc; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        nav h1 { font-size: 24px; }
+        nav button { background: #005ab8; color: white; border: none; padding: 10px 20px; margin-left: 10px; cursor: pointer; border-radius: 5px; }
+        nav button:hover { background: #004a99; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #333; margin-bottom: 20px; font-size: 28px; text-align: center; }
+        h3 { color: #555; margin: 20px 0 15px 0; font-size: 18px; }
+        .input-group { display: grid; grid-template-columns: 1fr 1fr 200px; gap: 10px; margin-bottom: 20px; }
+        input, button { padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        input { border: 1px solid #ddd; }
+        button { background: #0066cc; color: white; border: none; cursor: pointer; }
+        button:hover { background: #005ab8; }
+        button.danger { background: #cc3333; }
+        button.danger:hover { background: #aa2222; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        table th { background: #f0f0f0; font-weight: bold; }
+        table tr:hover { background: #f9f9f9; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .stat-value { font-size: 36px; font-weight: bold; color: #0066cc; margin: 10px 0; }
+        .qr-container { text-align: center; margin: 30px 0; }
+        .qr-container img { max-width: 300px; border: 2px solid #0066cc; padding: 10px; background: white; border-radius: 8px; }
+        .info-box { background: #f0f0f0; padding: 15px; border-radius: 5px; margin-top: 20px; }
+        .info-box p { margin: 8px 0; color: #555; }
+        .success { color: #228B22; font-size: 18px; font-weight: bold; }
+        .error { color: #cc3333; font-size: 18px; font-weight: bold; }
+        .center { text-align: center; }
+        .qr-clickable { cursor: pointer; transition: transform 0.2s; }
+        .qr-clickable:hover { transform: scale(1.05); }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <nav>
-      <h1>CheckIn Pro</h1>
-      <div>
-        <button onclick="window.showTab('checkin')">Check-In</button>
-        <button onclick="window.showTab('admin')">Administración</button>
-        <button onclick="window.showTab('stats')">Estadísticas</button>
-      </div>
-    </nav>
+    <div class="container">
+        <nav>
+            <h1>CheckIn Pro</h1>
+            <div>
+                <button onclick="window.showTab('checkin')">Check-In</button>
+                <button onclick="window.showTab('admin')">Administracion</button>
+                <button onclick="window.showTab('stats')">Estadisticas</button>
+            </div>
+        </nav>
 
-    <!-- Check-In Tab -->
-    <div id="checkin" class="tab-content active">
-      <div class="card">
-        <h2>Sistema de Check-In</h2>
-        <p class="center" style="font-size: 18px; margin-bottom: 20px;">Haz clic en el QR para registrar entrada/salida</p>
-        <div class="qr-container">
-          <img id="qrImage" class="qr-clickable" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://checkin.local/scan" alt="QR Code" onclick="window.handleCheckIn()" title="Haz clic para registrar">
+        <div id="checkin" class="tab-content active">
+            <div class="card">
+                <h2>Sistema de Check-In</h2>
+                <p class="center" style="font-size: 18px; margin-bottom: 20px;">Haz clic en el QR para registrar entrada/salida</p>
+                <div class="qr-container">
+                    <img id="qrImage" class="qr-clickable" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://checkin.local/scan" alt="QR Code" onclick="window.handleCheckIn()" title="Haz clic para registrar">
+                </div>
+                <div id="checkinStatus" class="center" style="margin: 20px 0; font-size: 16px; min-height: 30px;"></div>
+                <div class="info-box">
+                    <p><strong>Informacion de Conexion:</strong></p>
+                    <p id="macAddress">MAC: Detectando...</p>
+                    <p id="lastCheckIn">Ultimo registro: --</p>
+                </div>
+            </div>
         </div>
-        <div id="checkinStatus" class="center" style="margin: 20px 0; font-size: 16px; min-height: 30px;"></div>
-        <div class="info-box">
-          <p><strong>Información de Conexión:</strong></p>
-          <p id="macAddress">MAC: Detectando...</p>
-          <p id="lastCheckIn">Último registro: --</p>
+
+        <div id="admin" class="tab-content">
+            <div class="card">
+                <h2>Panel de Administracion</h2>
+                <h3>Registrar Nuevo Empleado</h3>
+                <div class="input-group">
+                    <input type="text" id="empName" placeholder="Nombre del empleado">
+                    <input type="text" id="empMAC" placeholder="Direccion MAC (ej: AA:BB:CC:DD:EE:FF)">
+                    <button onclick="window.addEmployee()">+ Agregar</button>
+                </div>
+                <h3>Empleados Registrados</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Direccion MAC</th>
+                            <th>Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employeesList"></tbody>
+                </table>
+            </div>
         </div>
-      </div>
+
+        <div id="stats" class="tab-content">
+            <div class="card">
+                <h2>Estadisticas</h2>
+                <div class="stats">
+                    <div class="stat-card">
+                        <p>Total Empleados</p>
+                        <div class="stat-value" id="totalEmps">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <p>Check-In Hoy</p>
+                        <div class="stat-value" id="checkinToday">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <p>Registros Totales</p>
+                        <div class="stat-value" id="totalRecords">0</div>
+                    </div>
+                </div>
+                <button onclick="window.exportCSV()" style="width: auto; margin-bottom: 20px;">Descargar CSV</button>
+                <h3>Ultimos Registros</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Empleado</th>
+                            <th>Fecha/Hora</th>
+                            <th>Tipo</th>
+                            <th>MAC</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsList"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <!-- Admin Tab -->
-    <div id="admin" class="tab-content">
-      <div class="card">
-        <h2>Panel de Administración</h2>
-        <h3>Registrar Nuevo Empleado</h3>
-        <div class="input-group">
-          <input type="text" id="empName" placeholder="Nombre del empleado">
-          <input type="text" id="empMAC" placeholder="Dirección MAC (ej: AA:BB:CC:DD:EE:FF)">
-          <button onclick="window.addEmployee()">+ Agregar</button>
-        </div>
-        <h3>Empleados Registrados</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Nombre</th>
-              <th>Dirección MAC</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody id="employeesList"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Stats Tab -->
-    <div id="stats" class="tab-content">
-      <div class="card">
-        <h2>Estadísticas</h2>
-        <div class="stats">
-          <div class="stat-card">
-            <p>Total Empleados</p>
-            <div class="stat-value" id="totalEmps">0</div>
-          </div>
-          <div class="stat-card">
-            <p>Check-In Hoy</p>
-            <div class="stat-value" id="checkinToday">0</div>
-          </div>
-          <div class="stat-card">
-            <p>Registros Totales</p>
-            <div class="stat-value" id="totalRecords">0</div>
-          </div>
-        </div>
-        <button onclick="window.exportCSV()" style="width: auto; margin-bottom: 20px;">Descargar CSV</button>
-        <h3>Últimos Registros</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Empleado</th>
-              <th>Fecha/Hora</th>
-              <th>MAC</th>
-            </tr>
-          </thead>
-          <tbody id="recordsList"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const storageKey = 'checkinProData';
-    
-    function getData() {
-      const data = localStorage.getItem(storageKey);
-      return data ? JSON.parse(data) : { employees: [], records: [] };
-    }
-    
-    function saveData(data) {
-      localStorage.setItem(storageKey, JSON.stringify(data));
-    }
-    
-    function getMAC(callback) {
-      const userAgent = navigator.userAgent;
-      const hash = btoa(userAgent).substring(0, 17);
-      const mac = hash.replace(/(.{2})(?=.)/g, '$1:');
-      callback(mac);
-    }
-    
-    window.showTab = function(tab) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      document.getElementById(tab).classList.add('active');
-      if (tab === 'admin') window.refreshEmployeesList();
-      if (tab === 'stats') window.refreshStats();
-    };
-    
-    window.handleCheckIn = function() {
-      getMAC(function(mac) {
-        const data = getData();
-        const employee = data.employees.find(e => e.mac.toLowerCase() === mac.toLowerCase());
-        
-        if (!employee) {
-          document.getElementById('checkinStatus').innerHTML = '<span class="error">❌ MAC no registrada. Agrega el empleado en Administración.</span>';
-          setTimeout(() => {
-            document.getElementById('checkinStatus').innerHTML = '';
-          }, 3000);
-          return;
-        }
-        
-        const now = new Date();
-        const record = {
-          id: Date.now(),
-          empId: employee.id,
-          empName: employee.name,
-          timestamp: now.toLocaleString('es-AR'),
-          mac: mac
-        };
-        
-        data.records.push(record);
-        saveData(data);
-        
-        document.getElementById('checkinStatus').innerHTML = `<span class="success">✓ ¡Bienvenido ${employee.name}! Hora: ${now.toLocaleTimeString('es-AR')}</span>`;
-        document.getElementById('lastCheckIn').textContent = `Último registro: ${record.timestamp}`;
-        
-        setTimeout(() => {
-          document.getElementById('checkinStatus').innerHTML = '';
-        }, 3000);
-      });
-    };
-    
-    window.addEmployee = function() {
-      const name = document.getElementById('empName').value.trim();
-      const mac = document.getElementById('empMAC').value.trim().toLowerCase();
-      
-      if (!name || !mac) {
-        alert('Por favor completa todos los campos');
-        return;
-      }
-      
-      const data = getData();
-      data.employees.push({ id: Date.now(), name, mac });
-      saveData(data);
-      
-      document.getElementById('empName').value = '';
-      document.getElementById('empMAC').value = '';
-      
-      window.refreshEmployeesList();
-    };
-    
-    window.deleteEmployee = function(id) {
-      if (confirm('¿Estás seguro?')) {
-        const data = getData();
-        data.employees = data.employees.filter(e => e.id !== id);
-        saveData(data);
-        window.refreshEmployeesList();
-      }
-    };
-    
-    window.refreshEmployeesList = function() {
-      const data = getData();
-      const tbody = document.getElementById('employeesList');
-      tbody.innerHTML = '';
-      
-      data.employees.forEach((emp, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${i+1}</td><td>${emp.name}</td><td>${emp.mac}</td><td><button class="danger" onclick="window.deleteEmployee(${emp.id})">Eliminar</button></td>`;
-        tbody.appendChild(tr);
-      });
-    };
-    
-    window.refreshStats = function() {
-      const data = getData();
-      document.getElementById('totalEmps').textContent = data.employees.length;
-      document.getElementById('totalRecords').textContent = data.records.length;
-      document.getElementById('checkinToday').textContent = data.records.length;
-      
-      const tbody = document.getElementById('recordsList');
-      tbody.innerHTML = '';
-      
-      data.records.slice(-20).reverse().forEach(r => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${r.empName}</td><td>${r.timestamp}</td><td>${r.mac}</td>`;
-        tbody.appendChild(tr);
-      });
-    };
-    
-    window.exportCSV = function() {
-      const data = getData();
-      let csv = 'ID,Empleado,Timestamp,MAC\n';
-      
-      data.records.forEach(r => {
-        csv += `${r.id},"${r.empName}","${r.timestamp}",${r.mac}\n`;
-      });
-      
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `checkin-${Date.now()}.csv`;
-      a.click();
-    };
-    
-    window.addEventListener('load', function() {
-      getMAC(function(mac) {
-        document.getElementById('macAddress').textContent = `MAC: ${mac}`;
-      });
-    });
-  </script>
+    <script>
+        const storageKey = 'checkinProData';
+        function getData() { const data = localStorage.getItem(storageKey); return data ? JSON.parse(data) : { employees: [], records: [] }; }
+        function saveData(data) { localStorage.setItem(storageKey, JSON.stringify(data)); }
+        function getMAC(callback) { const userAgent = navigator.userAgent; const hash = btoa(userAgent).substring(0, 17); const mac = hash.replace(/(.{2})(?=.)/g, '$1:'); callback(mac); }
+        window.showTab = function(tab) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); document.getElementById(tab).classList.add('active'); if (tab === 'admin') window.refreshEmployeesList(); if (tab === 'stats') window.refreshStats(); };
+        window.handleCheckIn = function() { getMAC(function(mac) { const data = getData(); const employee = data.employees.find(e => e.mac.toLowerCase() === mac.toLowerCase()); if (!employee) { document.getElementById('checkinStatus').innerHTML = '<span class="error">x MAC no registrada. Agrega en Administracion.</span>'; setTimeout(() => { document.getElementById('checkinStatus').innerHTML = ''; }, 3000); return; } const now = new Date(); const timeStr = now.toLocaleTimeString('es-AR'); const dateStr = now.toLocaleDateString('es-AR'); const fullDateTime = now.toLocaleString('es-AR'); const lastRecord = data.records.filter(r => r.empId === employee.id).pop(); const isExit = lastRecord && lastRecord.type === 'ENTRADA'; const type = isExit ? 'SALIDA' : 'ENTRADA'; const record = { id: Date.now(), empId: employee.id, empName: employee.name, timestamp: fullDateTime, type: type, mac: mac }; data.records.push(record); saveData(data); const typeLabel = type === 'ENTRADA' ? 'ENTRADA REGISTRADA' : 'SALIDA REGISTRADA'; document.getElementById('checkinStatus').innerHTML = `<span class="success">OK ${typeLabel}<br>${employee.name}<br>${dateStr} - ${timeStr}</span>`; document.getElementById('lastCheckIn').textContent = `Ultimo registro: ${fullDateTime} (${type})`; setTimeout(() => { document.getElementById('checkinStatus').innerHTML = ''; }, 4000); }); };
+        window.addEmployee = function() { const name = document.getElementById('empName').value.trim(); const mac = document.getElementById('empMAC').value.trim().toLowerCase(); if (!name || !mac) { alert('Completa los campos'); return; } const data = getData(); data.employees.push({ id: Date.now(), name, mac }); saveData(data); document.getElementById('empName').value = ''; document.getElementById('empMAC').value = ''; window.refreshEmployeesList(); };
+        window.deleteEmployee = function(id) { if (confirm('Estoy seguro?')) { const data = getData(); data.employees = data.employees.filter(e => e.id !== id); saveData(data); window.refreshEmployeesList(); } };
+        window.refreshEmployeesList = function() { const data = getData(); const tbody = document.getElementById('employeesList'); tbody.innerHTML = ''; data.employees.forEach((emp, i) => { const tr = document.createElement('tr'); tr.innerHTML = `<td>${i+1}</td><td>${emp.name}</td><td>${emp.mac}</td><td><button class="danger" onclick="window.deleteEmployee(${emp.id})">Eliminar</button></td>`; tbody.appendChild(tr); }); };
+        window.refreshStats = function() { const data = getData(); document.getElementById('totalEmps').textContent = data.employees.length; document.getElementById('totalRecords').textContent = data.records.length; const today = new Date().toLocaleDateString('es-AR'); const todayRecords = data.records.filter(r => r.timestamp.includes(today)); document.getElementById('checkinToday').textContent = todayRecords.length; const tbody = document.getElementById('recordsList'); tbody.innerHTML = ''; data.records.slice(-20).reverse().forEach(r => { const tr = document.createElement('tr'); tr.innerHTML = `<td>${r.empName}</td><td>${r.timestamp}</td><td>${r.type}</td><td>${r.mac}</td>`; tbody.appendChild(tr); }); };
+        window.exportCSV = function() { const data = getData(); let csv = 'ID,Empleado,Timestamp,Tipo,MAC\n'; data.records.forEach(r => { csv += `${r.id},"${r.empName}","${r.timestamp}",${r.type},${r.mac}\n`; }); const blob = new Blob([csv], { type: 'text/csv' }); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `checkin-${Date.now()}.csv`; a.click(); };
+        window.addEventListener('load', function() { getMAC(function(mac) { document.getElementById('macAddress').textContent = `MAC: ${mac}`; }); });
+    </script>
 </body>
 </html>
