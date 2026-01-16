@@ -1,3 +1,4 @@
+160
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -105,6 +106,7 @@
                         <div class="stat-value" id="totalEmps">0</div>
                     </div>
                     <div class="stat-card">
+155
                         <p>Check-In Hoy</p>
                         <div class="stat-value" id="checkinToday">0</div>
                     </div>
@@ -143,9 +145,8 @@
 
         function getMAC(callback) {
             const userAgent = navigator.userAgent;
- const hash = btoa(navigator.userAgent).substring(0, 17);            const mac = hash.replace(/(.{2})(?=.)/g, '$1:');
-             const mac = hash.replace(/(.{2})(?=.)/g, '$1:');
-            callback(mac);
+const hash = btoa(navigator.userAgent).substring(0, 17);
+ const mac = hash.replace(/(.{2})(?=.)/g, '$1:');             const mac = hash.replace(/(.{2})(?=.)/g, '$1:');
         }
 
         function showTab(tab) {
