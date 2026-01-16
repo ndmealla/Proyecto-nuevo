@@ -1,316 +1,104 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CheckIn Pro - Control de Asistencia</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="manifest" href="./manifest.json">
+    <title>CheckIn Pro | Gestión de Asistencia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        
+        :root {
+            --primary: #4f46e5;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #root {
+            min-height: 100vh;
+        }
+
+        /* Estilos del Loader Inicial */
+        .initial-loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100%;
+            background: #ffffff;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #f1f5f9;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.55, 0.055, 0.675, 0.19) infinite;
+        }
+
+        .loader-text {
+            margin-top: 24px;
+            color: #64748b;
+            font-weight: 800;
+            font-size: 12px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <script>
+        // Entorno global para compatibilidad
+        window.process = { env: { NODE_ENV: 'production' } };
+    </script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-dom": "https://esm.sh/react-dom@^19.2.3",
+        "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
+        "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+        "html5-qrcode": "https://esm.sh/html5-qrcode@^2.3.8",
+        "recharts": "https://esm.sh/recharts@^3.6.0"
+      }
     }
-    .container {
-      width: 100%;
-      max-width: 900px;
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      padding: 40px;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    .logo { font-size: 48px; margin-bottom: 15px; }
-    h1 { color: #2d3748; font-size: 32px; margin-bottom: 10px; }
-    .subtitle { color: #718096; font-size: 14px; margin-bottom: 20px; }
-    .device-info {
-      background: #edf2f7;
-      padding: 15px;
-      border-radius: 8px;
-      font-size: 12px;
-      color: #2d3748;
-      margin-bottom: 20px;
-    }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
-    .section {
-      padding: 20px;
-      background: #f7fafc;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
-    }
-    .section h3 { color: #2d3748; margin-bottom: 15px; font-size: 16px; }
-    .qr-display {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      border: 2px dashed #cbd5e0;
-      min-height: 200px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 15px;
-    }
-    .button {
-      background: #667eea;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      margin: 8px 4px;
-      transition: all 0.3s;
-      width: 100%;
-    }
-    .button:hover { background: #5568d3; transform: translateY(-2px); }
-    .button-secondary {
-      background: #e2e8f0;
-      color: #2d3748;
-    }
-    .button-secondary:hover { background: #cbd5e0; }
-    .status {
-      padding: 15px;
-      background: #f0fdf4;
-      border: 1px solid #86efac;
-      border-radius: 8px;
-      color: #16a34a;
-      margin-bottom: 15px;
-      display: none;
-    }
-    .status.show { display: block; }
-    .status.error {
-      background: #fef2f2;
-      border-color: #fca5a5;
-      color: #dc2626;
-    }
-    .record {
-      padding: 12px;
-      background: white;
-      margin-bottom: 10px;
-      border-left: 4px solid #667eea;
-      border-radius: 4px;
-      font-size: 13px;
-    }
-    .record.entrada { border-left-color: #48bb78; }
-    .record.salida { border-left-color: #f56565; }
-    .time { color: #718096; font-size: 11px; margin-top: 5px; }
-    .employee-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 10px;
-    }
-    .employee-btn {
-      padding: 12px;
-      background: white;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 12px;
-      transition: all 0.3s;
-      text-align: center;
-    }
-    .employee-btn:hover { border-color: #667eea; background: #f7fafc; }
-    .records-container {
-      max-height: 400px;
-      overflow-y: auto;
-    }
-  </style>
+    </script>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <div class="logo">👥</div>
-      <h1>CheckIn Pro</h1>
-      <p class="subtitle">Control de Asistencia con QR</p>
+    <div id="root">
+        <div class="initial-loader">
+            <div class="spinner"></div>
+            <p class="loader-text">Iniciando CheckIn Pro</p>
+        </div>
     </div>
 
-    <div class="device-info" id="deviceInfo">📱 Inicializando...</div>
-    <div id="status"></div>
+    <!-- Punto de entrada de React -->
+    <script type="module" src="./index.tsx"></script>
 
-    <div class="grid">
-      <div class="section">
-        <h3>Código QR Principal</h3>
-        <div class="qr-display" id="qrDisplay">CHECKIN MAIN</div>
-        <p style="color: #718096; font-size: 12px; text-align: center;">Código para impresión</p>
-      </div>
-
-      <div class="section">
-        <h3>Control de Terminal</h3>
-        <button class="button" onclick="app.configAdmin()">⚙️ Configurar Admin</button>
-        <button class="button button-secondary" onclick="app.simulateCheckIn()">📱 Simular Escaneo</button>
-        <button class="button button-secondary" onclick="app.downloadReport()">📊 Descargar Reporte</button>
-      </div>
-    </div>
-
-    <div class="section" style="margin-bottom: 20px;">
-      <h3>Empleados de Prueba</h3>
-      <div class="employee-list" id="employeeList"></div>
-    </div>
-
-    <div class="section">
-      <h3>Registros del Día</h3>
-      <div class="records-container" id="records"></div>
-    </div>
-  </div>
-
-  <script>
-    const mockEmployees = [
-      { id: 'emp_001', name: 'Juan García', position: 'Gerente' },
-      { id: 'emp_002', name: 'Carlos Martinez', position: 'Operario' },
-      { id: 'emp_003', name: 'Ana López', position: 'Vendedor' },
-      { id: 'emp_004', name: 'Pedro Sánchez', position: 'Técnico' },
-      { id: 'emp_005', name: 'María Rodríguez', position: 'Administrativo' }
-    ];
-
-    const app = {
-      deviceMAC: null,
-      adminUser: null,
-      records: [],
-
-      init() {
-        this.getDeviceMAC();
-        this.loadConfig();
-        this.loadRecords();
-        this.renderEmployees();
-        this.updateUI();
-      },
-
-      getDeviceMAC() {
-        let mac = localStorage.getItem('device_mac');
-        if (!mac) {
-          const chars = '0123456789ABCDEF';
-          mac = Array.from({ length: 6 }, () =>
-            chars[Math.floor(Math.random() * 16)] +
-            chars[Math.floor(Math.random() * 16)]
-          ).join(':');
-          localStorage.setItem('device_mac', mac);
+    <script>
+        // Registro de PWA simplificado
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('PWA Lista'))
+                    .catch(err => console.debug('Offline no disponible'));
+            });
         }
-        this.deviceMAC = mac;
-      },
-
-      loadConfig() {
-        const config = JSON.parse(localStorage.getItem('terminal_config') || '{}');
-        this.adminUser = config.adminUser || 'Admin';
-      },
-
-      saveConfig() {
-        localStorage.setItem('terminal_config', JSON.stringify({
-          adminUser: this.adminUser
-        }));
-      },
-
-      loadRecords() {
-        const today = new Date().toLocaleDateString('es-AR');
-        const saved = JSON.parse(localStorage.getItem('checkin_records_' + today) || '[]');
-        this.records = saved;
-      },
-
-      saveRecords() {
-        const today = new Date().toLocaleDateString('es-AR');
-        localStorage.setItem('checkin_records_' + today, JSON.stringify(this.records));
-      },
-
-      updateUI() {
-        document.getElementById('deviceInfo').innerHTML = `📱 Dispositivo: ${this.deviceMAC}<br>👤 Admin: ${this.adminUser}`;
-        const recordsDiv = document.getElementById('records');
-        if (this.records.length === 0) {
-          recordsDiv.innerHTML = '<p style="color: #718096; text-align: center; padding: 20px;">Sin registros aún</p>';
-        } else {
-          recordsDiv.innerHTML = this.records
-            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-            .map(r => `
-              <div class="record ${r.action.toLowerCase()}">
-                <strong>${r.name}</strong> - ${r.action}
-                <div class="time">${r.timestamp}</div>
-              </div>
-            `).join('');
-        }
-      },
-
-      renderEmployees() {
-        const list = document.getElementById('employeeList');
-        list.innerHTML = mockEmployees.map(emp => `
-          <button class="employee-btn" onclick="app.processCheckIn('${emp.id}', '${emp.name}')">
-            ${emp.name}<br><small>${emp.position}</small>
-          </button>
-        `).join('');
-      },
-
-      processCheckIn(empID, empName) {
-        const lastRecord = this.records
-          .filter(r => r.id === empID)
-          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
-        const action = (!lastRecord || lastRecord.action === 'SALIDA') ? 'ENTRADA' : 'SALIDA';
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const dateStr = now.toLocaleDateString('es-AR');
-        const record = {
-          id: empID,
-          name: empName,
-          timestamp: `${dateStr} ${timeStr}`,
-          action: action,
-          mac: this.deviceMAC,
-          admin: this.adminUser
-        };
-        this.records.push(record);
-        this.saveRecords();
-        this.showStatus(`✅ ${empName} registrado ${action}`, false);
-        this.updateUI();
-      },
-
-      simulateCheckIn() {
-        const emp = mockEmployees[Math.floor(Math.random() * mockEmployees.length)];
-        this.processCheckIn(emp.id, emp.name);
-      },
-
-      configAdmin() {
-        const name = prompt('Ingrese nombre del administrador:');
-        if (name) {
-          this.adminUser = name;
-          this.saveConfig();
-          this.showStatus(`✅ Administrador configurado: ${name}`);
-          this.updateUI();
-        }
-      },
-
-      downloadReport() {
-        if (this.records.length === 0) {
-          alert('No hay registros para descargar');
-          return;
-        }
-        const csv = 'Fecha,Hora,Empleado,Accion,MAC,Admin\n' +
-          this.records.map(r => {
-            const parts = r.timestamp.split(' ');
-            return `${parts[0]},${parts[1]},${r.name},${r.action},${r.mac},${r.admin}`;
-          }).join('\n');
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `checkin_${new Date().toLocaleDateString('es-AR')}.csv`;
-        a.click();
-        this.showStatus(`📥 Reporte descargado: ${this.records.length} registros`);
-      },
-
-      showStatus(msg, isError = false) {
-        const status = document.getElementById('status');
-        status.textContent = msg;
-        status.classList.add('show');
-        if (isError) status.classList.add('error');
-        else status.classList.remove('error');
-        setTimeout(() => status.classList.remove('show'), 3000);
-      }
-    };
-
-    window.addEventListener('load', () => app.init());
-  </script>
+    </script>
 </body>
 </html>
