@@ -150,8 +150,8 @@ const mac = hash.replace(/(.{2})(?=.)/g, '$1:');
             callback(mac);
 }
 
-        function showTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+function showTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(tab).classList.add('active');
             if (tab === 'admin') refreshEmployeesList();
             if (tab === 'stats') refreshStats();
